@@ -16,14 +16,21 @@ export async function signUp(email, password, userData) {
 
     if (authError) throw authError
 
+    // Calcula data de expiração (7 dias de trial)
+    const dataExpiracao = new Date()
+    dataExpiracao.setDate(dataExpiracao.getDate() + 7)
+
     const { error: userError } = await supabase
       .from('users')
       .insert([{
         id: authData.user.id,
+        email: email,
         nome: userData.nome,
         negocio: userData.negocio,
         telefone: userData.telefone,
-        saldo_caixa: 0
+        saldo_caixa: 0,
+        plano: 'teste',
+        data_expiracao: dataExpiracao.toISOString().split('T')[0]
       }])
 
     if (userError) throw userError
