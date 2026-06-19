@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parcelyx – Gestão de Cobranças</title>
+  
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0729F5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Parcelyx">
+  <link rel="apple-touch-icon" href="img/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/icon-192.png">
+  <link rel="shortcut icon" href="img/icon-192.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Supabase JS Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-auth.js"></script>
+
+<!-- LOGIN -->
+<div id="page-login" class="page active">
+  <div class="login-bg">
+    <div class="login-box">
+      <div class="login-logo">
+        <img src="img/180x120px.png" alt="Parcelyx" style="height:120px;width:auto;object-fit:contain;background:#fff;border-radius:20px;padding:14px 28px;box-shadow:0 4px 24px rgba(0,0,0,0.25)">
+      </div>
+      <p class="login-sub">Gestão inteligente de cobranças e parcelamentos</p>
+      <div class="card login-card">
+        <h2>Entrar na conta</h2>
+        <p class="text-muted mb-4">Acesse seu painel de controle</p>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="login-email" placeholder="seu@email.com">
+        </div>
+        <div class="form-group" style="position:relative">
+          <label>Senha</label>
+          <div style="position:relative">
+            <input type="password" id="login-senha" placeholder="••••••••" style="padding-right:44px;width:100%;box-sizing:border-box">
+            <button type="button" onclick="toggleSenha('login-senha',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:#a3a3a3;display:flex;align-items:center;justify-content:center" title="Mostrar/ocultar senha">
+              <svg id="login-senha-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--neutral-500)">
+            <input type="checkbox" style="width:14px;height:14px"> Lembrar-me
+          </label>
+          <a href="#" style="font-size:13px;color:var(--primary);font-weight:500">Esqueci a senha</a>
+        </div>
+        <button class="btn btn-primary btn-full mt-4" onclick="fazerLogin()">Entrar</button>
+      </div>
+      <p style="color:rgba(255,255,255,0.8);font-size:13px;text-align:center;margin-top:20px">
+        Não tem conta? <a href="#" onclick="mostrarCadastro();return false" style="color:#fff;font-weight:600;text-decoration:underline">Criar conta</a>
+      </p>
+      <p style="color:rgba(255,255,255,0.5);font-size:12px;text-align:center;margin-top:20px">© 2025 Parcelyx. Todos os direitos reservados.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CADASTRO -->
+<div id="page-cadastro" class="page">
+  <div class="login-bg">
+    <div class="login-box" style="max-width:480px">
+      <div class="login-logo">
+        <img src="img/180x120px.png" alt="Parcelyx" style="height:120px;width:auto;object-fit:contain;background:#fff;border-radius:20px;padding:14px 28px;box-shadow:0 4px 24px rgba(0,0,0,0.25)">
+      </div>
+      <p class="login-sub">Crie sua conta e comece a gerenciar suas cobranças</p>
+      <div class="card login-card">
+
+        <!-- Steps indicator -->
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px">
+          <div id="step-dot-1" style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</div>
+          <div style="width:32px;height:2px;background:var(--neutral-200)" id="step-line-1"></div>
+          <div id="step-dot-2" style="width:28px;height:28px;border-radius:50%;background:var(--neutral-200);color:var(--neutral-500);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</div>
+          <div style="width:32px;height:2px;background:var(--neutral-200)" id="step-line-2"></div>
+          <div id="step-dot-3" style="width:28px;height:28px;border-radius:50%;background:var(--neutral-200);color:var(--neutral-500);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</div>
+        </div>
+
+        <!-- STEP 1: Dados pessoais -->
+        <div id="cad-step-1">
+          <h2 style="margin-bottom:4px">Seus dados</h2>
+          <p class="text-muted mb-4">Informações da sua conta</p>
+          <div class="form-group">
+            <label>Nome completo *</label>
+            <input type="text" id="cad-nome" placeholder="Seu nome completo">
+          </div>
+          <div class="form-group">
+            <label>E-mail *</label>
+            <input type="email" id="cad-email" placeholder="seu@email.com">
+          </div>
+          <div class="form-group">
+            <label>Telefone / WhatsApp *</label>
+            <input type="tel" id="cad-tel" placeholder="(11) 99999-9999">
+          </div>
+          <div class="form-group">
+            <label>Senha *</label>
+            <input type="password" id="cad-senha" placeholder="Mínimo 6 caracteres" oninput="checkPasswordStrength(this.value)">
+            <div style="margin-top:8px;display:none" id="password-strength">
+              <div style="display:flex;gap:4px;margin-bottom:4px">
+                <div id="strength-bar-1" style="height:4px;flex:1;background:#e5e5e5;border-radius:2px;transition:background 0.3s"></div>
+                <div id="strength-bar-2" style="height:4px;flex:1;background:#e5e5e5;border-radius:2px;transition:background 0.3s"></div>
+                <div id="strength-bar-3" style="height:4px;flex:1;background:#e5e5e5;border-radius:2px;transition:background 0.3s"></div>
+                <div id="strength-bar-4" style="height:4px;flex:1;background:#e5e5e5;border-radius:2px;transition:background 0.3s"></div>
+              </div>
+              <p id="strength-text" style="font-size:12px;margin:0"></p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Confirmar senha *</label>
+            <input type="password" id="cad-senha2" placeholder="Repita a senha">
+          </div>
+          <button class="btn btn-primary btn-full mt-2" onclick="cadStep1()">Continuar →</button>
+        </div>
+
+        <!-- STEP 2: Dados do negócio -->
+        <div id="cad-step-2" style="display:none">
+          <h2 style="margin-bottom:4px">Seu negócio</h2>
+          <p class="text-muted mb-4">Como se chama sua empresa?</p>
+          <div class="form-group">
+            <label>Nome do negócio *</label>
+            <input type="text" id="cad-negocio" placeholder="Ex: João Empréstimos">
+          </div>
+          <div class="form-group">
+            <label>Tipo de negócio</label>
+            <select id="cad-tipo">
+              <option value="">Selecione...</option>
+              <option>Empréstimos pessoais</option>
+              <option>Vendas parceladas</option>
+              <option>Financiamento de produtos</option>
+              <option>Crédito consignado</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>CPF / CNPJ</label>
+            <input type="text" id="cad-doc" placeholder="000.000.000-00">
+          </div>
+          <div class="form-group">
+            <label>Chave PIX</label>
+            <input type="text" id="cad-pix" placeholder="CPF, e-mail, telefone ou chave aleatória">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+            <button class="btn btn-full" onclick="cadVoltar(1)" style="border:1.5px solid var(--neutral-200);color:var(--neutral-700);background:#fff">← Voltar</button>
+            <button class="btn btn-primary btn-full" onclick="cadStep2()">Continuar →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Confirmação -->
+        <div id="cad-step-3" style="display:none;text-align:center">
+          <div style="width:72px;height:72px;background:var(--pix-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--pix)" stroke-width="2.5" style="width:36px;height:36px"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2 style="margin-bottom:8px">Conta criada!</h2>
+          <p class="text-muted" style="margin-bottom:6px">Bem-vindo ao <strong>Parcelyx</strong>!</p>
+          <p class="text-muted mb-4">Sua conta foi criada com sucesso. Agora você pode começar a gerenciar suas cobranças.</p>
+          <div id="cad-resumo" style="background:var(--neutral-50);border-radius:12px;padding:14px;text-align:left;margin-bottom:20px;font-size:13px"></div>
+          <button class="btn btn-primary btn-full" onclick="irParaPlanos()">Escolher plano →</button>
+        </div>
+
+      </div>
+      <p style="color:rgba(255,255,255,0.5);font-size:12px;text-align:center;margin-top:20px">
+        Já tem conta? <a href="#" onclick="mostrarLogin()" style="color:rgba(255,255,255,0.8);font-weight:600">Entrar</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ESCOLHA DE PLANO -->
+<div id="page-plano" class="page">
+  <div class="login-bg">
+    <div class="login-box" style="max-width:800px">
+      <div class="login-logo">
+        <img src="img/180x120px.png" alt="Parcelyx" style="height:100px;width:auto;object-fit:contain;background:#fff;border-radius:20px;padding:14px 28px;box-shadow:0 4px 24px rgba(0,0,0,0.25)">
+      </div>
+      <h2 style="color:#fff;text-align:center;margin:20px 0 8px">Escolha seu plano</h2>
+      <p class="login-sub">Comece com 7 dias grátis ou adquira já o plano completo</p>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px">
+        
+        <!-- PLANO TESTE -->
+        <div class="card" style="text-align:center;padding:28px;border:2px solid var(--neutral-200)">
+          <div style="width:56px;height:56px;background:var(--success-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" style="width:28px;height:28px">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <h3 style="margin-bottom:8px;font-size:22px">Teste Grátis</h3>
+          <div style="font-size:36px;font-weight:800;color:var(--success);margin:12px 0">7 dias</div>
+          <p style="color:var(--neutral-600);font-size:14px;margin-bottom:20px">Teste todas as funcionalidades sem compromisso</p>
+          
+          <ul style="text-align:left;margin:20px 0;padding:0;list-style:none">
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Clientes ilimitados
+            </li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Parcelamentos ilimitados
+            </li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Cobranças via WhatsApp
+            </li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Geração de PIX
+            </li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Relatórios completos
+            </li>
+          </ul>
+          
+          <button class="btn btn-full" onclick="iniciarTeste()" style="background:#10b981;color:#fff;font-weight:600;border:none;margin-top:8px">
+            Começar teste grátis
+          </button>
+          <p style="font-size:11px;color:var(--neutral-500);margin-top:10px">Sem cartão de crédito</p>
+        </div>
+        
+        <!-- PLANO PAGO -->
+        <div class="card" style="text-align:center;padding:28px;border:2px solid var(--primary);position:relative;overflow:hidden">
+          <div style="position:absolute;top:12px;right:12px;background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700">RECOMENDADO</div>
+          
+          <div style="width:56px;height:56px;background:#E0E7FF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" style="width:28px;height:28px">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <h3 style="margin-bottom:8px;font-size:22px">Plano Completo</h3>
+          <div style="font-size:36px;font-weight:800;color:var(--primary);margin:12px 0">
+            R$ 29,00
+            <span style="font-size:16px;font-weight:500;color:var(--neutral-600)">/mês</span>
+          </div>
+          <p style="color:var(--neutral-600);font-size:14px;margin-bottom:20px">Acesso vitalício com suporte prioritário</p>
+          
+          <ul style="text-align:left;margin:20px 0;padding:0;list-style:none">
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              <strong>Tudo do plano grátis</strong>
+            </li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Sem limites de uso
+            </li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Suporte prioritário
+            </li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Atualizações gratuitas
+            </li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+              Backup automático
+            </li>
+          </ul>
+          
+          <button class="btn btn-primary btn-full" onclick="openModal('modal-pagamento')">
+            Assinar agora
+          </button>
+        </div>
+        
+      </div>
+      
+      <p style="color:rgba(255,255,255,0.7);font-size:13px;text-align:center;margin-top:25px">
+        Dúvidas? <a href="https://wa.me/5516992383821?text=Ol%C3%A1!%20Tenho%20d%C3%BAvidas%20sobre%20o%20Parcelyx" target="_blank" style="color:#fff;font-weight:600;text-decoration:underline">Fale conosco no WhatsApp</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAMENTO PIX -->
+<div id="modal-pagamento" class="modal-overlay" onclick="closeModalOutside(event,'modal-pagamento')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>Pagamento via PIX</h3>
+      <button onclick="closeModal('modal-pagamento')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      
+      <div style="background:var(--primary-light);border-radius:12px;padding:20px;margin-bottom:20px">
+        <div style="font-size:14px;color:var(--primary);font-weight:600;margin-bottom:8px">Valor do Plano Mensal</div>
+        <div style="font-size:42px;font-weight:800;color:var(--primary)">R$ 29,00</div>
+      </div>
+      
+      <div style="background:var(--neutral-50);border-radius:12px;padding:18px;margin-bottom:20px;text-align:left">
+        <h4 style="font-size:14px;font-weight:700;color:var(--neutral-900);margin-bottom:12px">📋 Dados para pagamento</h4>
+        
+        <div style="margin-bottom:10px">
+          <div style="font-size:11px;color:var(--neutral-600);margin-bottom:4px">Chave PIX (Aleatória)</div>
+          <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:10px;border-radius:8px;border:1px solid var(--neutral-200)">
+            <input type="text" value="f0f99a8d-bf9d-4efe-9822-1b2f6655d908" id="pix-chave-pagamento" readonly style="flex:1;border:none;font-size:12px;font-family:monospace;color:var(--neutral-900);background:transparent">
+            <button onclick="copiarChavePix()" style="background:var(--primary);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">
+              Copiar
+            </button>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:10px">
+          <div style="font-size:11px;color:var(--neutral-600);margin-bottom:4px">Nome</div>
+          <div style="font-size:13px;font-weight:600;color:var(--neutral-900)">Wallace Santos Dias do Nascimento</div>
+        </div>
+        
+        <div>
+          <div style="font-size:11px;color:var(--neutral-600);margin-bottom:4px">Banco</div>
+          <div style="font-size:13px;font-weight:600;color:var(--neutral-900)">Santander</div>
+        </div>
+      </div>
+      
+      <div style="background:#FEF3C7;border-radius:12px;padding:14px;margin-bottom:20px;text-align:left">
+        <div style="display:flex;align-items:start;gap:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" style="width:20px;height:20px;flex-shrink:0;margin-top:2px">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div style="font-size:12px;color:#92400E">
+            <strong>Importante:</strong> Após realizar o pagamento, envie o comprovante via WhatsApp para ativar sua conta imediatamente.
+          </div>
+        </div>
+      </div>
+      
+      <a href="https://wa.me/5516992383821?text=Ol%C3%A1!%20Realizei%20o%20pagamento%20do%20Parcelyx%20no%20valor%20de%20R%24%2029%2C00.%20Segue%20o%20comprovante." 
+         target="_blank" 
+         class="btn btn-full"
+         style="background:#25D366;color:#fff;font-weight:600;border:none;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;margin-bottom:12px">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        Enviar comprovante via WhatsApp
+      </a>
+      
+      <button class="btn btn-ghost btn-full" onclick="closeModal('modal-pagamento')">
+        Fechar
+      </button>
+      
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="img/140x93px.png" alt="Parcelyx" style="height:58px;width:auto;object-fit:contain">
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" onclick="navigate('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a href="#" class="nav-item" onclick="navigate('clientes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</a>
+      <a href="#" class="nav-item" onclick="navigate('parcelamentos',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Parcelamentos</a>
+      <a href="#" class="nav-item" onclick="navigate('parcelas',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Parcelas</a>
+      <a href="#" class="nav-item" onclick="navigate('cobrancas',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Cobranças</a>
+      <a href="#" class="nav-item" onclick="navigate('financeiro',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Financeiro</a>
+      <a href="#" class="nav-item" onclick="navigate('configuracoes',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar">M</div>
+      <div style="flex:1;min-width:0">
+        <div id="sidebar-user-nome" style="font-size:13px;font-weight:600;color:#171717;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Meu Negócio</div>
+        <div id="sidebar-user-email" style="font-size:11px;color:#737373;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">admin@parcelyx.com</div>
+      </div>
+      <button onclick="sairSistema()" title="Sair" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#a3a3a3;flex-shrink:0;transition:all 0.15s" onmouseover="this.style.background='#fef2f2';this.style.color='#dc2626'" onmouseout="this.style.background='none';this.style.color='#a3a3a3'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;display:block"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MOBILE HEADER -->
+  <header class="mobile-header">
+    <button class="menu-btn" onclick="toggleSidebar()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="mobile-logo">
+      <img src="img/100x67px.png" alt="Parcelyx" style="height:44px;width:auto;object-fit:contain">
+    </div>
+    <div style="width:36px"></div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- DASHBOARD -->
+    <section id="sec-dashboard" class="section active">
+      <div class="page-header">
+        <div><h1>Dashboard</h1><p class="text-muted">Visão geral do seu negócio</p></div>
+      </div>
+      <div class="stats-grid" id="stats-grid"></div>
+      <div id="caixa-card" class="mt-4"></div>
+      <div class="card mt-4">
+        <h3 class="card-title">Recebimentos (últimos 6 meses)</h3>
+        <div class="chart-wrap"><canvas id="chart-receitas"></canvas></div>
+      </div>
+      <div class="card mt-4">
+        <h3 class="card-title">Recebimentos recentes</h3>
+        <div id="recentes-list"></div>
+      </div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section id="sec-clientes" class="section">
+      <div class="page-header">
+        <div><h1>Clientes</h1><p class="text-muted" id="clientes-count"></p></div>
+        <button class="btn btn-primary" onclick="openModal('modal-cliente')">+ Novo cliente</button>
+      </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar por nome, telefone ou CPF..." id="search-clientes" oninput="renderClientes()">
+      </div>
+      <div id="clientes-list" class="list-wrap"></div>
+    </section>
+
+    <!-- PARCELAMENTOS -->
+    <section id="sec-parcelamentos" class="section">
+      <div class="page-header">
+        <div><h1>Parcelamentos</h1><p class="text-muted" id="parc-count"></p></div>
+        <button class="btn btn-primary" onclick="openModal('modal-parcelamento')">+ Novo</button>
+      </div>
+      <div id="parcelamentos-list" class="list-wrap"></div>
+    </section>
+
+    <!-- PARCELAS -->
+    <section id="sec-parcelas" class="section">
+      <div class="page-header">
+        <div><h1>Parcelas</h1><p class="text-muted">Gerencie todas as parcelas</p></div>
+      </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar por cliente..." id="search-parcelas" oninput="renderParcelas()">
+      </div>
+      <div class="filter-tabs" id="filter-parcelas">
+        <button class="filter-btn active" onclick="filterParcelas('todas',this)">Todas</button>
+        <button class="filter-btn" onclick="filterParcelas('pendente',this)">Pendentes</button>
+        <button class="filter-btn" onclick="filterParcelas('atrasado',this)">Atrasadas</button>
+        <button class="filter-btn" onclick="filterParcelas('pago',this)">Pagas</button>
+      </div>
+      <div class="stats-mini" id="parcelas-mini"></div>
+      <div id="parcelas-list" class="list-wrap mt-3"></div>
+    </section>
+
+    <!-- COBRANÇAS -->
+    <section id="sec-cobrancas" class="section">
+      <div class="page-header">
+        <div><h1>Cobranças</h1><p class="text-muted">Cobre via WhatsApp e PIX</p></div>
+      </div>
+      <div class="stats-grid-2 mb-4">
+        <div class="card card-action" onclick="openModal('modal-pix')">
+          <div class="action-icon pix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17h3v3"/><path d="M17 14h3"/></svg></div>
+          <div class="action-label">Gerar PIX</div>
+          <div class="action-sub">Copia e cola ou QR Code</div>
+        </div>
+        <div class="card">
+          <div class="action-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="action-label" id="qtd-atrasadas">0</div>
+          <div class="action-sub">Parcelas atrasadas</div>
+        </div>
+      </div>
+      <h3 class="section-subtitle">Parcelas para cobrar</h3>
+      <div id="cobrancas-list" class="list-wrap"></div>
+    </section>
+
+    <!-- FINANCEIRO -->
+    <section id="sec-financeiro" class="section">
+      <div class="page-header">
+        <div><h1>Financeiro</h1><p class="text-muted">Controle financeiro simplificado</p></div>
+      </div>
+      <div class="stats-grid" id="fin-stats"></div>
+      <div id="caixa-card" class="mt-4"></div>
+      <div class="card mt-4">
+        <h3 class="card-title">Fluxo de caixa</h3>
+        <div class="chart-wrap"><canvas id="chart-fluxo"></canvas></div>
+      </div>
+      <div class="card mt-4">
+        <h3 class="card-title">Distribuição</h3>
+        <div id="fin-dist"></div>
+      </div>
+      <div class="card mt-4">
+        <h3 class="card-title">Últimas entradas</h3>
+        <div id="fin-entradas"></div>
+      </div>
+    </section>
+
+    <!-- CONFIGURAÇÕES -->
+    <section id="sec-configuracoes" class="section">
+      <div class="page-header">
+        <div><h1>Configurações</h1><p class="text-muted">Personalize seu Parcelyx</p></div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-section-title"><div class="cs-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>Dados do negócio</div>
+        <div class="form-group"><label>Nome da empresa</label><input type="text" value="Meu Negócio"></div>
+        <div class="form-group"><label>Telefone</label><input type="tel" value="(11) 99999-0000"></div>
+        <div class="form-group"><label>E-mail</label><input type="email" value="admin@parcelyx.com"></div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-section-title"><div class="cs-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>Chave PIX</div>
+        <div class="form-group"><label>Tipo de chave</label>
+          <select id="conf-pix-tipo" onchange="salvarConfPix()"><option>E-mail</option><option>CPF</option><option>CNPJ</option><option>Telefone</option><option>Chave aleatória</option></select>
+        </div>
+        <div class="form-group"><label>Chave PIX</label><input type="text" id="conf-pix-chave" value="pagamentos@parcelyx.com" oninput="salvarConfPix()"></div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-section-title"><div class="cs-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>Notificações</div>
+        <div class="toggle-row"><div><div class="toggle-label">Notificações push</div><div class="toggle-sub">Receba alertas de pagamentos</div></div><div class="toggle active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div></div>
+        <div class="toggle-row"><div><div class="toggle-label">Lembrete automático</div><div class="toggle-sub">Lembrar clientes antes do vencimento</div></div><div class="toggle active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="salvarConfPix();showToast('Configurações salvas! ✅')">Salvar configurações</button>
+      <p class="text-center text-muted mt-4" style="font-size:12px">Parcelyx v1.0.0 • Feito com ❤️ para pequenos negócios</p>
+    </section>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="#" class="bn-item active" onclick="navigate('dashboard',this)" data-nav="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></a>
+    <a href="#" class="bn-item" onclick="navigate('clientes',this)" data-nav="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Clientes</span></a>
+    <a href="#" class="bn-item" onclick="navigate('parcelas',this)" data-nav="parcelas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Parcelas</span></a>
+    <a href="#" class="bn-item" onclick="navigate('cobrancas',this)" data-nav="cobrancas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Cobranças</span></a>
+    <a href="#" class="bn-item" onclick="navigate('financeiro',this)" data-nav="financeiro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Financeiro</span></a>
+  </nav>
+
+</div>
+
+<!-- SIDEBAR OVERLAY -->
+<div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- MODAL CLIENTE -->
+<div id="modal-cliente" class="modal-overlay" onclick="closeModalOutside(event,'modal-cliente')">
+  <div class="modal">
+    <div class="modal-header"><h3>Novo cliente</h3><button onclick="closeModal('modal-cliente')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Nome *</label><input type="text" id="c-nome" placeholder="Nome completo"></div>
+      <div class="form-group"><label>Telefone *</label><input type="tel" id="c-tel" placeholder="(11) 99999-9999"></div>
+      <div class="form-group"><label>CPF</label><input type="text" id="c-cpf" placeholder="000.000.000-00"></div>
+      <div class="form-group"><label>Endereço</label><input type="text" id="c-end" placeholder="Rua, número, bairro"></div>
+      <div class="form-group"><label>Observações</label><textarea id="c-obs" rows="2" placeholder="Anotações sobre o cliente"></textarea></div>
+      <button class="btn btn-primary btn-full mt-2" onclick="salvarCliente()">Cadastrar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PARCELAMENTO -->
+<div id="modal-parcelamento" class="modal-overlay" onclick="closeModalOutside(event,'modal-parcelamento')">
+  <div class="modal">
+    <div class="modal-header"><h3>Novo parcelamento</h3><button onclick="closeModal('modal-parcelamento')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Cliente *</label>
+        <select id="p-cliente"><option value="">Selecione um cliente</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Valor total *</label><input type="number" id="p-valor" placeholder="0,00" step="0.01"></div>
+        <div class="form-group"><label>Entrada</label><input type="number" id="p-entrada" placeholder="0,00" step="0.01"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Parcelas *</label><input type="number" id="p-parcelas" placeholder="12"></div>
+        <div class="form-group"><label>Juros %</label><input type="number" id="p-juros" placeholder="2" step="0.1"></div>
+        <div class="form-group"><label>Dia venc. *</label><input type="number" id="p-venc" placeholder="15" min="1" max="31"></div>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="p-obs" rows="2" placeholder="Detalhes do parcelamento"></textarea></div>
+      <button class="btn btn-primary btn-full mt-2" onclick="salvarParcelamento()">Criar parcelamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PIX -->
+<div id="modal-pix" class="modal-overlay" onclick="closeModalOutside(event,'modal-pix')">
+  <div class="modal">
+    <div class="modal-header"><h3>PIX Copia e Cola</h3><button onclick="closeModal('modal-pix')">✕</button></div>
+    <div class="modal-body" style="text-align:center">
+      <div class="qr-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17h3v3"/><path d="M17 14h3"/></svg>
+        <p>QR Code PIX</p>
+      </div>
+      <div class="pix-code-box">
+        <p style="font-size:11px;color:#737373;margin-bottom:4px">Tipo: <span id="pix-modal-tipo">E-mail</span></p>
+        <p style="font-size:14px;font-weight:700;color:#010C27;word-break:break-all;margin:4px 0" id="pix-modal-chave">pagamentos@parcelyx.com</p>
+      </div>
+      <button class="btn btn-primary btn-full mt-3" onclick="copiarPix()">📋 Copiar código PIX</button>
+      <button class="btn btn-ghost btn-full mt-2" onclick="closeModal('modal-pix')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CLIENTE -->
+<div id="modal-editar-cliente" class="modal-overlay" onclick="closeModalOutside(event,'modal-editar-cliente')">
+  <div class="modal">
+    <div class="modal-header"><h3>Editar cliente</h3><button onclick="closeModal('modal-editar-cliente')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Nome *</label><input type="text" id="ec-nome" placeholder="Nome completo"></div>
+      <div class="form-group"><label>Telefone *</label><input type="tel" id="ec-tel" placeholder="(11) 99999-9999"></div>
+      <div class="form-group"><label>CPF</label><input type="text" id="ec-cpf" placeholder="000.000.000-00"></div>
+      <div class="form-group"><label>Endereço</label><input type="text" id="ec-end" placeholder="Rua, número, bairro"></div>
+      <div class="form-group"><label>Observações</label><textarea id="ec-obs" rows="2" placeholder="Anotações sobre o cliente"></textarea></div>
+      <button class="btn btn-primary btn-full mt-2" onclick="salvarEdicaoCliente()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PARCELAMENTO -->
+<div id="modal-editar-parcelamento" class="modal-overlay" onclick="closeModalOutside(event,'modal-editar-parcelamento')">
+  <div class="modal">
+    <div class="modal-header"><h3>Editar parcelamento</h3><button onclick="closeModal('modal-editar-parcelamento')">✕</button></div>
+    <div class="modal-body">
+      <div id="ep-info"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Juros %</label><input type="number" id="ep-juros" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>Dia vencimento</label><input type="number" id="ep-venc" min="1" max="31" placeholder="15"></div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="ep-status">
+          <option value="ativo">Ativo</option>
+          <option value="quitado">Quitado</option>
+          <option value="atrasado">Atrasado</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="ep-obs" rows="2" placeholder="Detalhes do parcelamento"></textarea></div>
+      <button class="btn btn-primary btn-full mt-2" onclick="salvarEdicaoParcelamento()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR PAGAMENTO -->
+<div id="modal-confirmar-pago" class="modal-overlay" onclick="closeModalOutside(event,'modal-confirmar-pago')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Confirmar pagamento</h3>
+      <button onclick="closeModal('modal-confirmar-pago')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="width:56px;height:56px;background:var(--pix-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--pix)" stroke-width="2.5" style="width:28px;height:28px"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <p style="font-size:14px;color:var(--neutral-500)">Confirma o recebimento desta parcela?</p>
+      </div>
+      <div id="confirm-pago-info"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+        <button class="btn btn-full" onclick="closeModal('modal-confirmar-pago')" style="border:1.5px solid var(--neutral-200);color:var(--neutral-700);background:#fff">Cancelar</button>
+        <button class="btn btn-full" onclick="confirmarPago()" style="background:var(--pix);color:#fff">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

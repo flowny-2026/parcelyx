@@ -1,0 +1,246 @@
+import { createClient } from '@supabase/supabase-js'
+
+const SUPABASE_URL = 'https://rflwwbzqfpivezcnhbum.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmbHd3YnpxZnBpdmV6Y25oYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3Mjg0MzAsImV4cCI6MjA5NzMwNDQzMH0.NZyqEyACBGlB7Ckywa0Cci4d4AFq2eQdDycx1OfRoo0'
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+// ====== AUTENTICAÇÃO ======
+
+export async function signUp(email, password, userData) {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    })
+
+    if (authError) throw authError
+
+    const { error: userError } = await supabase
+      .from('users')
+      .insert([{
+        id: authData.user.id,
+        nome: userData.nome,
+        negocio: userData.negocio,
+        telefone: userData.telefone,
+        saldo_caixa: 0
+      }])
+
+    if (userError) throw userError
+
+    return { data: authData.user, error: null }
+  } catch (error) {
+    return { data: null, error }
+  }
+}
+
+export async function signIn(email, password) {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) throw error
+    return { data: data.user, error: null }
+  } catch (error) {
+    return { data: null, error }
+  }
+}
+
+export async function signOut() {
+  const { error } = await supabase.auth.signOut()
+  return { error }
+}
+
+export async function getCurrentUser() {
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
+export async function getSession() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session
+}
+
+// ====== CLIENTES ======
+
+export async function getClientes() {
+  const { data, error } = await supabase
+    .from('clientes')
+    .select('*')
+    .order('created_at', { ascending: false })
+  
+  return { data, error }
+}
+
+export async function createCliente(cliente) {
+  const user = await getCurrentUser()
+  const { data, error } = await supabase
+    .from('clientes')
+    .insert([{ ...cliente, user_id: user.id }])
+    .select()
+    .single()
+  
+  return { data, error }
+}
+
+export async function updateCliente(id, updates) {
+  const { data, error } = await supabase
+    .from('clientes')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  
+  return { data, error }
+}
+
+export async function deleteCliente(id) {
+  const { error } = await supabase
+    .from('clientes')
+    .delete()
+    .eq('id', id)
+  
+  return { error }
+}
+
+// ====== PARCELAMENTOS ======
+
+export async function getParcelamentos() {
+  const { data, error } = await supabase
+    .from('parcelamentos')
+    .select('*')
+    .order('created_at', { ascending: false })
+  
+  return { data, error }
+}
+
+export async function createParcelamento(parcelamento) {
+  try {
+    const user = await getCurrentUser()
+    
+    // Criar parcelamento
+    const { data: parcData, error: parcError } = await supabase
+      .from('parcelamentos')
+      .insert([{ ...parcelamento, user_id: user.id }])
+      .select()
+      .single()
+
+    if (parcError) throw parcError
+
+    // Gerar parcelas
+    const parcelas = generateParcelas(parcData)
+    const { error: parcelasError } = await supabase
+      .from('parcelas')
+      .insert(parcelas.map(p => ({ ...p, user_id: user.id })))
+
+    if (parcelasError) throw parcelasError
+
+    return { data: parcData, error: null }
+  } catch (error) {
+    return { data: null, error }
+  }
+}
+
+export async function updateParcelamento(id, updates) {
+  const { data, error } = await supabase
+    .from('parcelamentos')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  
+  return { data, error }
+}
+
+export async function deleteParcelamento(id) {
+  const { error } = await supabase
+    .from('parcelamentos')
+    .delete()
+    .eq('id', id)
+  
+  return { error }
+}
+
+// ====== PARCELAS ======
+
+export async function getParcelas() {
+  const { data, error } = await supabase
+    .from('parcelas')
+    .select('*')
+    .order('vencimento', { ascending: true })
+  
+  return { data, error }
+}
+
+export async function marcarParcelaPaga(id) {
+  const { data, error } = await supabase
+    .from('parcelas')
+    .update({ 
+      status: 'pago',
+      data_pagamento: new Date().toISOString().split('T')[0]
+    })
+    .eq('id', id)
+    .select()
+    .single()
+  
+  return { data, error }
+}
+
+// ====== USUÁRIO ======
+
+export async function getUserData() {
+  const user = await getCurrentUser()
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+  
+  return { data, error }
+}
+
+export async function updateUserData(updates) {
+  const user = await getCurrentUser()
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', user.id)
+    .select()
+    .single()
+  
+  return { data, error }
+}
+
+// ====== HELPER ======
+
+function generateParcelas(parcelamento) {
+  const parcelas = []
+  const valorParcela = ((parcelamento.valor_total - parcelamento.entrada) * (1 + parcelamento.juros / 100)) / parcelamento.parcelas
+  const today = new Date()
+
+  for (let i = 1; i <= parcelamento.parcelas; i++) {
+    const d = new Date(parcelamento.data_criacao)
+    d.setMonth(d.getMonth() + i)
+    d.setDate(parcelamento.vencimento)
+    
+    let status = 'pendente'
+    if (d < today) status = 'atrasado'
+    else if (d.toDateString() === today.toDateString()) status = 'vence_hoje'
+
+    parcelas.push({
+      parcelamento_id: parcelamento.id,
+      cliente_id: parcelamento.cliente_id,
+      cliente_nome: parcelamento.cliente_nome,
+      numero: i,
+      total_parcelas: parcelamento.parcelas,
+      valor: Math.round(valorParcela * 100) / 100,
+      vencimento: d.toISOString().split('T')[0],
+      status: status,
+      data_pagamento: null
+    })
+  }
+
+  return parcelas
+}

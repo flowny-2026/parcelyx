@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Parcelyx Admin – Painel de Controle</title>
+  
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0729F5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="img/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/icon-192.png">
+  <link rel="shortcut icon" href="img/icon-192.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- Supabase JS Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-auth.js"></script>
+
+<!-- LOGIN ADMIN -->
+<div id="admin-login" class="admin-login-wrap">
+  <div class="admin-login-box">
+    <div class="admin-login-logo">
+      <img src="img/180x120px.png" alt="Parcelyx" style="height:70px;width:auto;object-fit:contain;background:#fff;border-radius:14px;padding:10px 20px;box-shadow:0 4px 20px rgba(0,0,0,0.2)">
+    </div>
+    <div class="admin-badge">⚙️ Painel Administrativo</div>
+    <div class="admin-login-card">
+      <h2>Acesso restrito</h2>
+      <p class="text-muted mb-4">Somente administradores autorizados</p>
+      <div class="form-group">
+        <label>E-mail admin</label>
+        <input type="email" id="adm-email" placeholder="admin@parcelyx.com">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div style="position:relative">
+          <input type="password" id="adm-senha" placeholder="••••••••" style="padding-right:44px;width:100%;box-sizing:border-box">
+          <button type="button" onclick="toggleSenhaAdmin('adm-senha',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:#a3a3a3;display:flex;align-items:center;justify-content:center" title="Mostrar/ocultar senha">
+            <svg id="adm-senha-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="login-error" class="login-error hidden">E-mail ou senha incorretos</div>
+      <button class="btn btn-primary btn-full mt-3" onclick="adminLogin()">Entrar no painel</button>
+      <p style="text-align:center;margin-top:16px;font-size:12px;color:#737373">
+        <a href="index.html" style="color:#0729F5">← Voltar ao sistema</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- PAINEL ADMIN -->
+<div id="admin-app" class="admin-app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-logo">
+      <img src="img/140x93px.png" alt="Parcelyx" style="height:44px;width:auto;object-fit:contain">
+      <span class="admin-tag">ADMIN</span>
+    </div>
+    <nav class="admin-nav">
+      <a href="#" class="admin-nav-item active" onclick="adminNav('dashboard',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="admin-nav-item" onclick="adminNav('contas',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Contas
+      </a>
+      <a href="#" class="admin-nav-item" onclick="adminNav('planos',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Planos
+      </a>
+      <a href="#" class="admin-nav-item" onclick="adminNav('financeiro',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Financeiro
+      </a>
+      <a href="#" class="admin-nav-item" onclick="adminNav('suporte',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Suporte
+      </a>
+      <a href="#" class="admin-nav-item" onclick="adminNav('configuracoes',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configurações
+      </a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <div class="admin-user-info">
+        <div class="admin-avatar">A</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#fff">Super Admin</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5)">admin@parcelyx.com</div>
+        </div>
+      </div>
+      <button onclick="adminLogout()" class="logout-btn" title="Sair">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main">
+
+    <!-- HEADER -->
+    <header class="admin-header">
+      <div id="admin-page-title">
+        <h1>Dashboard</h1>
+        <p>Visão geral da plataforma</p>
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn-icon" onclick="adminNav('contas',null);setTimeout(()=>openModal('modal-nova-conta'),100)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova conta
+        </button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section id="adm-sec-dashboard" class="adm-section active">
+      <div class="adm-stats-grid" id="adm-stats"></div>
+      <div class="adm-grid-2 mt-4">
+        <div class="adm-card">
+          <h3 class="adm-card-title">Receita mensal</h3>
+          <canvas id="adm-chart-receita" style="width:100%;height:180px"></canvas>
+        </div>
+        <div class="adm-card">
+          <h3 class="adm-card-title">Distribuição por plano</h3>
+          <div id="adm-dist-planos"></div>
+        </div>
+      </div>
+      <div class="adm-card mt-4">
+        <h3 class="adm-card-title">Últimas contas criadas</h3>
+        <div id="adm-ultimas-contas"></div>
+      </div>
+    </section>
+
+    <!-- CONTAS -->
+    <section id="adm-sec-contas" class="adm-section">
+      <div class="adm-toolbar">
+        <div class="adm-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Buscar conta..." id="adm-search-contas" oninput="renderContas()">
+        </div>
+        <div class="adm-filters">
+          <select id="adm-filter-plano" onchange="renderContas()">
+            <option value="">Todos os planos</option>
+            <option>Mensal</option>
+            <option>Trial</option>
+          </select>
+          <select id="adm-filter-status" onchange="renderContas()">
+            <option value="">Todos os status</option>
+            <option>Ativo</option>
+            <option>Trial</option>
+            <option>Suspenso</option>
+            <option>Cancelado</option>
+          </select>
+        </div>
+        <button class="btn-primary-sm" onclick="openModal('modal-nova-conta')">+ Nova conta</button>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table" id="adm-table-contas">
+          <thead>
+            <tr>
+              <th>Usuário</th>
+              <th>Negócio</th>
+              <th>Plano</th>
+              <th>Status</th>
+              <th>Vencimento</th>
+              <th>Criado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="adm-contas-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PLANOS -->
+    <section id="adm-sec-planos" class="adm-section">
+      <div class="adm-planos-grid" id="adm-planos-grid"></div>
+      <div class="adm-card mt-4">
+        <h3 class="adm-card-title">Editar planos</h3>
+        <div id="adm-planos-edit"></div>
+      </div>
+    </section>
+
+    <!-- FINANCEIRO -->
+    <section id="adm-sec-financeiro" class="adm-section">
+      <div class="adm-stats-grid" id="adm-fin-stats"></div>
+      <div class="adm-card mt-4">
+        <h3 class="adm-card-title">Histórico de pagamentos</h3>
+        <div class="adm-table-wrap">
+          <table class="adm-table">
+            <thead><tr><th>Usuário</th><th>Plano</th><th>Valor</th><th>Data</th><th>Status</th></tr></thead>
+            <tbody id="adm-pagamentos-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUPORTE -->
+    <section id="adm-sec-suporte" class="adm-section">
+      <div class="adm-card">
+        <h3 class="adm-card-title">Tickets de suporte</h3>
+        <div id="adm-tickets"></div>
+      </div>
+    </section>
+
+    <!-- CONFIGURAÇÕES -->
+    <section id="adm-sec-configuracoes" class="adm-section">
+      <div class="adm-grid-2">
+        <div class="adm-card">
+          <h3 class="adm-card-title">Dados da plataforma</h3>
+          <div class="form-group"><label>Nome da plataforma</label><input type="text" value="Parcelyx"></div>
+          <div class="form-group"><label>E-mail de suporte</label><input type="email" value="suporte@parcelyx.com"></div>
+          <div class="form-group"><label>WhatsApp suporte</label><input type="tel" value="(11) 99999-0000"></div>
+          <button class="btn-primary-sm mt-2" onclick="showAdmToast('Configurações salvas! ✅')">Salvar</button>
+        </div>
+        <div class="adm-card">
+          <h3 class="adm-card-title">Segurança</h3>
+          <div class="form-group"><label>E-mail admin</label><input type="email" value="admin@parcelyx.com"></div>
+          <div class="form-group"><label>Nova senha</label><input type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label>Confirmar senha</label><input type="password" placeholder="••••••••"></div>
+          <button class="btn-primary-sm mt-2" onclick="showAdmToast('Senha alterada! ✅')">Alterar senha</button>
+        </div>
+        <div class="adm-card">
+          <h3 class="adm-card-title">Trial padrão</h3>
+          <div class="form-group"><label>Dias de trial gratuito</label><input type="number" value="7"></div>
+          <div class="form-group"><label>Plano padrão no trial</label>
+            <select><option>Mensal</option></select>
+          </div>
+          <button class="btn-primary-sm mt-2" onclick="showAdmToast('Configurações salvas! ✅')">Salvar</button>
+        </div>
+        <div class="adm-card">
+          <h3 class="adm-card-title">Notificações automáticas</h3>
+          <div class="toggle-row"><div><div class="toggle-label">E-mail de boas-vindas</div></div><div class="toggle active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-label">Aviso de vencimento</div></div><div class="toggle active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div></div>
+          <div class="toggle-row"><div><div class="toggle-label">Conta suspensa</div></div><div class="toggle active" onclick="this.classList.toggle('active')"><div class="toggle-thumb"></div></div></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL NOVA CONTA -->
+<div id="modal-nova-conta" class="adm-modal-overlay" onclick="closeAdmModal('modal-nova-conta',event)">
+  <div class="adm-modal">
+    <div class="adm-modal-header">
+      <h3>Nova conta</h3>
+      <button onclick="closeAdmModal('modal-nova-conta')">✕</button>
+    </div>
+    <div class="adm-modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Nome *</label><input type="text" id="nc-nome" placeholder="Nome completo"></div>
+        <div class="form-group"><label>E-mail *</label><input type="email" id="nc-email" placeholder="email@exemplo.com"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Telefone</label><input type="tel" id="nc-tel" placeholder="(11) 99999-9999"></div>
+        <div class="form-group"><label>Nome do negócio</label><input type="text" id="nc-negocio" placeholder="Nome da empresa"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Plano *</label>
+          <select id="nc-plano">
+            <option value="Trial">Trial (7 dias grátis)</option>
+            <option value="Mensal">Mensal – R$ 29/mês</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Vencimento</label><input type="date" id="nc-venc"></div>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="nc-obs" rows="2" placeholder="Notas internas"></textarea></div>
+      <button class="btn-primary-sm btn-full mt-2" onclick="criarConta()">Criar conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CONTA -->
+<div id="modal-editar-conta" class="adm-modal-overlay" onclick="closeAdmModal('modal-editar-conta',event)">
+  <div class="adm-modal">
+    <div class="adm-modal-header">
+      <h3>Editar conta</h3>
+      <button onclick="closeAdmModal('modal-editar-conta')">✕</button>
+    </div>
+    <div class="adm-modal-body" id="modal-editar-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="adm-toast" class="adm-toast"></div>
+
+<script src="admin.js"></script>
+</body>
+</html>
