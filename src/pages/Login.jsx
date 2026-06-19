@@ -48,8 +48,8 @@ export default function Login() {
     
     // 🔑 Verifica se é o admin tentando logar
     if (loginEmail.toLowerCase() === 'admin@parcelyx.com') {
-      // Redireciona para o painel admin
-      window.location.href = '/admin.html'
+      // Redireciona para o painel admin React
+      navigate('/admin')
       return
     }
     

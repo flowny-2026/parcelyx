@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AppProvider } from './context/AppContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import Admin from './pages/Admin'
 import Dashboard from './pages/Dashboard'
 import Clientes from './pages/Clientes'
 import Parcelamentos from './pages/Parcelamentos'
@@ -17,6 +18,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="clientes" element={<Clientes />} />
