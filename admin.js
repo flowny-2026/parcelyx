@@ -24,11 +24,15 @@ let contas = [
 // Função para carregar usuários reais do Supabase
 async function carregarUsuariosReais() {
   try {
+    console.log('🔍 Iniciando carregamento de usuários...');
+    
     // Verifica se o Supabase está disponível
     if (typeof supabase === 'undefined') {
-      console.warn('Supabase não disponível, usando dados de exemplo');
+      console.warn('⚠️ Supabase não disponível, usando dados de exemplo');
       return contas;
     }
+    
+    console.log('✅ Supabase disponível, buscando usuários da tabela users...');
     
     // Busca todos os usuários da tabela users
     const { data: users, error } = await supabase
@@ -37,29 +41,36 @@ async function carregarUsuariosReais() {
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.warn('Erro ao carregar usuários do Supabase:', error);
+      console.error('❌ Erro ao carregar usuários do Supabase:', error);
+      console.log('ℹ️ Usando dados de exemplo');
       return contas;
     }
+    
+    console.log(`✅ ${users?.length || 0} usuários encontrados na tabela users`);
     
     // Se houver usuários, converte para o formato esperado
     if (users && users.length > 0) {
       contas = users.map((u, index) => ({
-        id: index + 1,
-        nome: u.nome || 'Sem nome',
+        id: u.id || index + 1,
+        nome: u.nome || u.email?.split('@')[0] || 'Sem nome',
         email: u.email || 'Não informado',
         telefone: u.telefone || 'Não informado',
         negocio: u.negocio || 'Sem negócio',
         plano: u.plano === 'teste' ? 'Trial' : 'Mensal',
         status: calcularStatus(u.data_expiracao, u.plano),
-        vencimento: u.data_expiracao || 'Não definido',
-        criado: u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : 'Não definido',
+        vencimento: u.data_expiracao ? new Date(u.data_expiracao).toLocaleDateString('pt-BR') : 'Não definido',
+        criado: u.created_at ? new Date(u.created_at).toLocaleDateString('pt-BR') : 'Não definido',
         obs: u.plano === 'teste' ? 'Período de teste' : ''
       }));
+      console.log('✅ Contas formatadas:', contas.length);
+    } else {
+      console.log('ℹ️ Nenhum usuário na tabela users, usando dados de exemplo');
     }
     
     return contas;
   } catch (error) {
-    console.warn('Erro ao carregar usuários:', error);
+    console.error('❌ Erro ao carregar usuários:', error);
+    console.log('ℹ️ Usando dados de exemplo');
     return contas;
   }
 }
