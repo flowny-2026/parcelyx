@@ -10,9 +10,11 @@ export default function Admin() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
-  const [secao, setSecao] = useState('dashboard')
   const [contas, setContas] = useState([])
   const [loading, setLoading] = useState(false)
+  const [busca, setBusca] = useState('')
+  const [filtroStatus, setFiltroStatus] = useState('')
+  const [toast, setToast] = useState('')
   const navigate = useNavigate()
 
   const handleLogin = (e) => {
@@ -34,28 +36,32 @@ export default function Admin() {
         .select('*')
         .order('created_at', { ascending: false })
       
-      if (error) throw error
+      if (error) {
+        console.error('Erro:', error)
+        mostrarToast('⚠️ Erro ao carregar contas')
+        setContas([])
+        setLoading(false)
+        return
+      }
       
-      const contasFormatadas = data.map((u, i) => ({
-        id: i + 1,
-        nome: u.nome || 'Sem nome',
+      const contasFormatadas = (data || []).map((u) => ({
+        id: u.id,
+        nome: u.nome || u.email?.split('@')[0] || 'Sem nome',
         email: u.email || 'Não informado',
         telefone: u.telefone || 'Não informado',
         negocio: u.negocio || 'Sem negócio',
         plano: u.plano === 'teste' ? 'Trial' : 'Mensal',
         status: calcularStatus(u.data_expiracao, u.plano),
         vencimento: u.data_expiracao ? new Date(u.data_expiracao).toLocaleDateString('pt-BR') : 'Não definido',
-        criado: u.created_at ? new Date(u.created_at).toLocaleDateString('pt-BR') : 'Não definido'
+        criado: u.created_at ? new Date(u.created_at).toLocaleDateString('pt-BR') : 'Não definido',
+        dataExpiracaoRaw: u.data_expiracao
       }))
       
       setContas(contasFormatadas)
     } catch (error) {
-      console.error('Erro ao carregar contas:', error)
-      // Dados de exemplo se falhar
-      setContas([
-        { id: 1, nome: 'João Silva', email: 'joao@exemplo.com', telefone: '(11) 99999-1111', negocio: 'Loja João', plano: 'Mensal', status: 'Ativo', vencimento: '15/07/2025', criado: '01/06/2025' },
-        { id: 2, nome: 'Maria Santos', email: 'maria@exemplo.com', telefone: '(11) 99999-2222', negocio: 'Maria Confeitaria', plano: 'Trial', status: 'Trial', vencimento: '26/06/2025', criado: '19/06/2025' }
-      ])
+      console.error('Erro:', error)
+      mostrarToast('❌ Erro ao carregar contas')
+      setContas([])
     }
     setLoading(false)
   }
@@ -69,13 +75,69 @@ export default function Admin() {
     return 'Ativo'
   }
 
+  const mostrarToast = (msg) => {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
+
+  const alterarStatusConta = async (conta, novoStatus) => {
+    if (!confirm(`Confirma alterar status para "${novoStatus}"?`)) return
+    
+    setLoading(true)
+    try {
+      let dataExpiracao = conta.dataExpiracaoRaw
+      
+      if (novoStatus === 'Ativo') {
+        const nova = new Date()
+        nova.setDate(nova.getDate() + 30)
+        dataExpiracao = nova.toISOString()
+      } else if (novoStatus === 'Suspenso') {
+        dataExpiracao = new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .update({ data_expiracao: dataExpiracao })
+        .eq('id', conta.id)
+
+      if (error) throw error
+
+      mostrarToast(`✅ Conta ${novoStatus.toLowerCase()} com sucesso!`)
+      carregarContas()
+    } catch (error) {
+      console.error('Erro:', error)
+      mostrarToast('❌ Erro ao alterar status')
+    }
+    setLoading(false)
+  }
+
+  const excluirConta = async (conta) => {
+    if (!confirm(`Confirma EXCLUIR a conta de "${conta.nome}"? Esta ação não pode ser desfeita.`)) return
+    
+    setLoading(true)
+    try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', conta.id)
+
+      if (error) throw error
+
+      mostrarToast('✅ Conta excluída com sucesso!')
+      carregarContas()
+    } catch (error) {
+      console.error('Erro:', error)
+      mostrarToast('❌ Erro ao excluir conta')
+    }
+    setLoading(false)
+  }
+
   const sair = () => {
     setAutenticado(false)
     setEmail('')
     setSenha('')
   }
 
-  // Tela de Login
   if (!autenticado) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
@@ -141,7 +203,6 @@ export default function Admin() {
     )
   }
 
-  // Painel Admin
   const stats = {
     ativos: contas.filter(c => c.status === 'Ativo').length,
     trial: contas.filter(c => c.status === 'Trial').length,
@@ -149,9 +210,16 @@ export default function Admin() {
     total: contas.length
   }
 
+  const contasFiltradas = contas.filter(c => {
+    const matchBusca = !busca || 
+      c.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      c.email.toLowerCase().includes(busca.toLowerCase())
+    const matchStatus = !filtroStatus || c.status === filtroStatus
+    return matchBusca && matchStatus
+  })
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -175,14 +243,12 @@ export default function Admin() {
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500">Visão geral da plataforma</p>
+          <h1 className="text-3xl font-bold text-gray-900">Painel Administrativo</h1>
+          <p className="text-gray-500">Gerencie todas as contas da plataforma</p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow p-6">
             <div className="flex items-center justify-between mb-2">
@@ -214,7 +280,7 @@ export default function Admin() {
               </div>
             </div>
             <div className="text-3xl font-bold text-gray-900">{stats.suspensos}</div>
-            <div className="text-xs text-red-600 mt-1">Requer atenção</div>
+            <div className="text-xs text-red-600 mt-1">{stats.suspensos > 0 ? 'Requer atenção' : 'Tudo certo'}</div>
           </div>
 
           <div className="bg-white rounded-xl shadow p-6">
@@ -229,14 +295,46 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Tabela de Contas */}
         <div className="bg-white rounded-xl shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Todas as Contas</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Gerenciar Contas ({contasFiltradas.length})</h2>
           </div>
+          
+          <div className="px-6 py-4 border-b border-gray-200 flex gap-4">
+            <input
+              type="text"
+              placeholder="Buscar por nome ou email..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select
+              value={filtroStatus}
+              onChange={(e) => setFiltroStatus(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos os status</option>
+              <option value="Ativo">Ativo</option>
+              <option value="Trial">Trial</option>
+              <option value="Suspenso">Suspenso</option>
+            </select>
+            <button
+              onClick={carregarContas}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+            >
+              🔄 Atualizar
+            </button>
+          </div>
+          
           <div className="overflow-x-auto">
             {loading ? (
               <div className="p-12 text-center text-gray-500">Carregando...</div>
+            ) : contasFiltradas.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="text-gray-400 text-5xl mb-4">📋</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma conta encontrada</h3>
+                <p className="text-gray-500">Os usuários precisam ter dados na tabela "users" do Supabase</p>
+              </div>
             ) : (
               <table className="w-full">
                 <thead className="bg-gray-50">
@@ -246,16 +344,16 @@ export default function Admin() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plano</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vencimento</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Criado em</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {contas.map((conta) => (
+                  {contasFiltradas.map((conta) => (
                     <tr key={conta.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold">{conta.nome[0]}</span>
+                            <span className="text-blue-600 font-semibold">{conta.nome[0]?.toUpperCase() || '?'}</span>
                           </div>
                           <div>
                             <div className="font-medium text-gray-900">{conta.nome}</div>
@@ -281,7 +379,35 @@ export default function Admin() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">{conta.vencimento}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{conta.criado}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          {conta.status === 'Suspenso' && (
+                            <button
+                              onClick={() => alterarStatusConta(conta, 'Ativo')}
+                              disabled={loading}
+                              className="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 text-xs font-medium rounded transition-colors disabled:opacity-50"
+                            >
+                              Ativar
+                            </button>
+                          )}
+                          {(conta.status === 'Ativo' || conta.status === 'Trial') && (
+                            <button
+                              onClick={() => alterarStatusConta(conta, 'Suspenso')}
+                              disabled={loading}
+                              className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded transition-colors disabled:opacity-50"
+                            >
+                              Suspender
+                            </button>
+                          )}
+                          <button
+                            onClick={() => excluirConta(conta)}
+                            disabled={loading}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded transition-colors disabled:opacity-50"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -290,6 +416,12 @@ export default function Admin() {
           </div>
         </div>
       </main>
+
+      {toast && (
+        <div className="fixed bottom-4 right-4 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {toast}
+        </div>
+      )}
     </div>
   )
 }
