@@ -44,15 +44,15 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault()
     setErro('')
-    setLoading(true)
     
-    // 🔑 Verifica se é o admin tentando logar
-    if (loginEmail.toLowerCase() === 'admin@parcelyx.com') {
-      // Redireciona para o painel admin React
+    // 🔑 IMPORTANTE: Verifica se é o admin ANTES de tentar autenticar
+    if (loginEmail.toLowerCase().trim() === 'admin@parcelyx.com') {
+      // Redireciona para o painel admin React (não precisa de senha aqui)
       navigate('/admin')
       return
     }
     
+    setLoading(true)
     const { data, error } = await signIn(loginEmail, loginSenha)
     if (error) {
       setErro('E-mail ou senha incorretos.')
