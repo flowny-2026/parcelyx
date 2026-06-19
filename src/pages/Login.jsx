@@ -179,6 +179,15 @@ export default function Login() {
           Não tem conta?{' '}
           <button onClick={() => { setTela('cadastro'); setStep(1); setErro('') }} className="text-blue-600 font-semibold">Criar conta</button>
         </p>
+        
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <button 
+            onClick={() => navigate('/admin')} 
+            className="w-full py-2 text-sm text-gray-600 hover:text-blue-600 font-medium transition-colors"
+          >
+            ⚙️ Acesso Administrativo
+          </button>
+        </div>
       </div>
 
       <p className="text-blue-300 text-xs mt-6">© 2025 Parcelyx. Todos os direitos reservados.</p>
