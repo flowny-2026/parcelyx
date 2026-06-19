@@ -1,6 +1,6 @@
 {
   "name": "parcelyx",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SaaS de gestão de cobranças, parcelamentos e PIX para pequenos negócios",
   "scripts": {
     "dev": "vite",
