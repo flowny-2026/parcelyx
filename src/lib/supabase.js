@@ -1,7 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = 'https://rflwwbzqfpivezcnhbum.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmbHd3YnpxZnBpdmV6Y25oYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3Mjg0MzAsImV4cCI6MjA5NzMwNDQzMH0.NZyqEyACBGlB7Ckywa0Cci4d4AFq2eQdDycx1OfRoo0'
+// Configuração usando variáveis de ambiente
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+// Validação de configuração
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error(
+    'Credenciais do Supabase não configuradas. ' +
+    'Verifique se as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY ' +
+    'estão definidas no arquivo .env'
+  )
+}
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
@@ -226,15 +236,35 @@ function generateParcelas(parcelamento) {
   const parcelas = []
   const valorParcela = ((parcelamento.valor_total - parcelamento.entrada) * (1 + parcelamento.juros / 100)) / parcelamento.parcelas
   const today = new Date()
+  today.setHours(0, 0, 0, 0) // Normaliza para comparação
 
   for (let i = 1; i <= parcelamento.parcelas; i++) {
+    // Cria data base a partir da data de criação
     const d = new Date(parcelamento.data_criacao)
-    d.setMonth(d.getMonth() + i)
+    
+    // Primeiro define o dia do vencimento
     d.setDate(parcelamento.vencimento)
     
+    // Depois adiciona os meses
+    d.setMonth(d.getMonth() + i)
+    
+    // Ajusta caso o dia não exista no mês (ex: 31 em fevereiro)
+    // Se ultrapassou o dia desejado, volta para o último dia do mês anterior
+    if (d.getDate() !== parcelamento.vencimento) {
+      d.setDate(0) // Vai para o último dia do mês anterior
+    }
+    
+    // Normaliza para comparação
+    const dNormalized = new Date(d)
+    dNormalized.setHours(0, 0, 0, 0)
+    
+    // Define status baseado na data
     let status = 'pendente'
-    if (d < today) status = 'atrasado'
-    else if (d.toDateString() === today.toDateString()) status = 'vence_hoje'
+    if (dNormalized < today) {
+      status = 'atrasado'
+    } else if (dNormalized.getTime() === today.getTime()) {
+      status = 'vence_hoje'
+    }
 
     parcelas.push({
       parcelamento_id: parcelamento.id,

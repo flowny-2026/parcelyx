@@ -37,6 +37,11 @@ export default function Login() {
 
   // Modal PIX pagamento
   const [showModalPix, setShowModalPix] = useState(false)
+  
+  // Dados PIX (vem de variáveis de ambiente)
+  const pixKey = import.meta.env.VITE_PIX_KEY || 'Chave não configurada'
+  const pixName = import.meta.env.VITE_PIX_NAME || 'Nome não configurado'
+  const pixBank = import.meta.env.VITE_PIX_BANK || 'Banco não configurado'
 
   const navigate = useNavigate()
 
@@ -45,13 +50,6 @@ export default function Login() {
     e.preventDefault()
     setErro('')
     
-    // 🔑 IMPORTANTE: Verifica se é o admin ANTES de tentar autenticar
-    if (loginEmail.toLowerCase().trim() === 'admin@parcelyx.com') {
-      // Redireciona para o painel admin React (não precisa de senha aqui)
-      navigate('/admin')
-      return
-    }
-    
     setLoading(true)
     const { data, error } = await signIn(loginEmail, loginSenha)
     if (error) {
@@ -59,6 +57,13 @@ export default function Login() {
       setLoading(false)
       return
     }
+    
+    // Redireciona para admin se for o email admin, mas APÓS autenticação
+    if (loginEmail.toLowerCase().trim() === 'admin@parcelyx.com') {
+      navigate('/admin')
+      return
+    }
+    
     navigate('/')
   }
 
@@ -115,7 +120,7 @@ export default function Login() {
   }
 
   const copiarPix = () => {
-    navigator.clipboard.writeText('f0f99a8d-bf9d-4efe-9822-1b2f6655d908')
+    navigator.clipboard.writeText(pixKey)
     alert('Chave PIX copiada!')
   }
 
@@ -405,19 +410,19 @@ export default function Login() {
               <div>
                 <p className="text-xs text-gray-500 mb-1">Chave PIX (Aleatória)</p>
                 <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-3">
-                  <span className="text-xs font-mono text-gray-800 flex-1 break-all">f0f99a8d-bf9d-4efe-9822-1b2f6655d908</span>
+                  <span className="text-xs font-mono text-gray-800 flex-1 break-all">{pixKey}</span>
                   <button onClick={copiarPix} className="bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap">Copiar</button>
                 </div>
               </div>
 
               <div>
                 <p className="text-xs text-gray-500 mb-1">Nome</p>
-                <p className="text-sm font-semibold text-gray-900">Wallace Santos Dias do Nascimento</p>
+                <p className="text-sm font-semibold text-gray-900">{pixName}</p>
               </div>
 
               <div>
                 <p className="text-xs text-gray-500 mb-1">Banco</p>
-                <p className="text-sm font-semibold text-gray-900">Santander</p>
+                <p className="text-sm font-semibold text-gray-900">{pixBank}</p>
               </div>
             </div>
 
