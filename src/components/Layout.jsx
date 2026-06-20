@@ -35,9 +35,9 @@ export default function Layout() {
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-neutral-200">
         <div className="flex items-center h-16 px-6 border-b border-neutral-100">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12h3l2.5-5 4 10 2.5-5h3" />
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 12h3l2.5-5 4 10 2.5-5h3" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <span className="text-xl font-bold text-neutral-900">Parcelyx</span>
@@ -89,9 +89,9 @@ export default function Layout() {
           <aside className="fixed inset-y-0 left-0 w-72 bg-white shadow-elevated z-50 animate-slide-in">
             <div className="flex items-center justify-between h-16 px-6 border-b border-neutral-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12h3l2.5-5 4 10 2.5-5h3" />
+                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 12h3l2.5-5 4 10 2.5-5h3" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
                 <span className="text-xl font-bold text-neutral-900">Parcelyx</span>
@@ -133,9 +133,9 @@ export default function Layout() {
               <Menu className="w-5 h-5 text-neutral-700" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12h3l2.5-5 4 10 2.5-5h3" />
+              <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 12h3l2.5-5 4 10 2.5-5h3" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
               <span className="text-lg font-bold text-neutral-900">Parcelyx</span>

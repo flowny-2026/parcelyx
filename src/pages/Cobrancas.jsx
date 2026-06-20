@@ -137,9 +137,9 @@ export default function Cobrancas() {
 
       {/* PIX Modal */}
       {showPix && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 overflow-y-auto">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowPix(false)} />
-          <div className="relative bg-white rounded-t-3xl md:rounded-3xl w-full max-w-md shadow-elevated p-6">
+          <div className="relative bg-white rounded-t-3xl md:rounded-3xl w-full max-w-md my-auto shadow-elevated animate-fade-in p-6">
             <h2 className="text-lg font-semibold text-neutral-900 mb-4 text-center">PIX Copia e Cola</h2>
 
             {/* QR Code placeholder */}

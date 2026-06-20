@@ -86,16 +86,16 @@ export default function Clientes() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 overflow-y-auto">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-t-3xl md:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-elevated">
-            <div className="sticky top-0 bg-white rounded-t-3xl md:rounded-t-3xl px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+          <div className="relative bg-white rounded-t-3xl md:rounded-3xl w-full max-w-lg my-auto shadow-elevated animate-fade-in">
+            <div className="sticky top-0 bg-white rounded-t-3xl md:rounded-t-3xl px-6 py-4 border-b border-neutral-100 flex items-center justify-between z-10">
               <h2 className="text-lg font-semibold text-neutral-900">Novo cliente</h2>
               <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-neutral-100">
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(90vh-4rem)] overflow-y-auto">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">Nome *</label>
                 <input
