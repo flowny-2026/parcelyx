@@ -237,6 +237,8 @@ function renderAdmDashboard() {
 
   // Últimas contas
   const ultimas = [...contas].sort((a,b)=>new Date(b.criado)-new Date(a.criado)).slice(0,5);
+  console.log(`📊 Dashboard: Mostrando ${ultimas.length} de ${contas.length} contas (últimas 5)`);
+  console.log('📋 Todas as contas:', contas);
   document.getElementById('adm-ultimas-contas').innerHTML = `
     <table class="adm-table">
       <thead><tr><th>Nome</th><th>Negócio</th><th>Plano</th><th>Status</th><th>Criado em</th></tr></thead>

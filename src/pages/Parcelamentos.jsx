@@ -104,15 +104,19 @@ export default function Parcelamentos() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-elevated animate-fade-in">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 flex-shrink-0">
-              <h2 className="text-lg font-semibold text-neutral-900">Novo parcelamento</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-neutral-100">
-                <X className="w-5 h-5 text-neutral-500" />
-              </button>
+          <div className="relative bg-white rounded-3xl w-full max-w-lg shadow-elevated animate-fade-in" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            {/* Header fixo */}
+            <div className="px-6 py-4 border-b border-neutral-100" style={{ flexShrink: 0 }}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-neutral-900">Novo parcelamento</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-neutral-100">
+                  <X className="w-5 h-5 text-neutral-500" />
+                </button>
+              </div>
             </div>
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-4">
+            {/* Form com scroll */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">Cliente *</label>
                 <select
@@ -205,8 +209,8 @@ export default function Parcelamentos() {
                 >
                   Criar parcelamento
                 </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       )}
