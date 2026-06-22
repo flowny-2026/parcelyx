@@ -1,17 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useApp } from '../context/AppContext'
 import { User, Building, CreditCard, Bell, Shield, Palette } from 'lucide-react'
 
 export default function Configuracoes() {
+  const { userData, updateUserData } = useApp()
   const [config, setConfig] = useState({
     nomeEmpresa: 'Meu Negócio',
-    telefone: '(11) 99999-0000',
-    email: 'admin@parcelyx.com',
-    chavePix: 'pagamentos@parcelyx.com',
+    telefone: '',
+    email: '',
+    chavePix: '',
     tipoChavePix: 'email',
     notificacoes: true,
     lembreteAutomatico: true,
     diasAntesLembrete: 3,
   })
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    if (!userData) return
+    setConfig(prev => ({
+      ...prev,
+      nomeEmpresa: userData.negocio || userData.nome || prev.nomeEmpresa,
+      telefone: userData.telefone || prev.telefone,
+      email: userData.email || prev.email,
+      chavePix: userData.chave_pix || prev.chavePix,
+      tipoChavePix: userData.tipo_chave_pix || prev.tipoChavePix,
+    }))
+  }, [userData])
 
   return (
     <div className="space-y-6 pb-20 md:pb-0 animate-fade-in">
@@ -147,9 +163,33 @@ export default function Configuracoes() {
         </div>
 
         {/* Save button */}
-        <button className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all shadow-sm">
-          Salvar configurações
+        <button
+          onClick={async () => {
+            setSaving(true)
+            setMessage('')
+            const result = await updateUserData({
+              negocio: config.nomeEmpresa,
+              telefone: config.telefone,
+              email: config.email,
+              chave_pix: config.chavePix,
+              tipo_chave_pix: config.tipoChavePix,
+            })
+            setSaving(false)
+            if (result.success) {
+              setMessage('Configurações salvas com sucesso.')
+            } else {
+              setMessage('Falha ao salvar. Verifique sua conexão e tente novamente.')
+            }
+          }}
+          disabled={saving}
+          className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-all shadow-sm"
+        >
+          {saving ? 'Salvando...' : 'Salvar configurações'}
         </button>
+
+        {message && (
+          <p className="text-center text-sm text-neutral-600 mt-3">{message}</p>
+        )}
 
         {/* Version */}
         <p className="text-center text-xs text-neutral-400 pt-4">

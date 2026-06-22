@@ -11,8 +11,7 @@ function toggleSenhaAdmin(inputId, btn) {
 }
 
 // ── CREDENCIAIS ADMIN ─────────────────────────────────
-const ADMIN_EMAIL = 'admin@parcelyx.com';
-const ADMIN_SENHA = 'admin123';
+const ADMIN_ALLOWED_EMAILS = ['admin@parcelyx.com'];
 
 // ── DADOS ────────────────────────────────────────────
 let contas = [
@@ -121,31 +120,52 @@ async function adminLogin() {
   const email = document.getElementById('adm-email').value.trim();
   const senha = document.getElementById('adm-senha').value.trim();
   const err = document.getElementById('login-error');
-  
-  console.log('Tentando login com:', email); // Debug
-  
-  if (email === ADMIN_EMAIL && senha === ADMIN_SENHA) {
-    console.log('Credenciais corretas!'); // Debug
+
+  err.classList.add('hidden');
+
+  if (!email || !senha) {
+    err.textContent = 'Preencha e-mail e senha.';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    const result = await fazerLoginSupabase(email, senha);
+
+    if (!result.success) {
+      console.log('Erro ao fazer login:', result.error);
+      err.textContent = 'E-mail ou senha incorretos.';
+      err.classList.remove('hidden');
+      return;
+    }
+
+    if (!ADMIN_ALLOWED_EMAILS.includes(email.toLowerCase())) {
+      await fazerLogout();
+      err.textContent = 'Acesso administrativo não autorizado.';
+      err.classList.remove('hidden');
+      return;
+    }
+
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-app').classList.remove('hidden');
-    
-    // Carrega usuários reais do Supabase (ou usa dados de exemplo)
+
     try {
       await carregarUsuariosReais();
-      console.log('Contas carregadas:', contas.length); // Debug
+      console.log('Contas carregadas:', contas.length);
     } catch (error) {
       console.error('Erro ao carregar contas:', error);
     }
-    
+
     renderAdmDashboard();
-  } else {
-    console.log('Credenciais incorretas'); // Debug
+  } catch (error) {
+    console.error('Erro inesperado no login admin:', error);
+    err.textContent = 'Erro ao conectar com o Supabase. Tente novamente.';
     err.classList.remove('hidden');
-    setTimeout(() => err.classList.add('hidden'), 3000);
   }
 }
 
-function adminLogout() {
+async function adminLogout() {
+  await fazerLogout();
   document.getElementById('admin-app').classList.add('hidden');
   document.getElementById('admin-login').classList.remove('hidden');
 }
@@ -352,19 +372,44 @@ function salvarEdicaoConta(id) {
   showAdmToast('Conta atualizada! ✅');
 }
 
-function criarConta() {
+async function criarConta() {
   const nome = document.getElementById('nc-nome').value.trim();
   const email = document.getElementById('nc-email').value.trim();
   if (!nome || !email) { showAdmToast('Preencha nome e e-mail'); return; }
+  
+  const plano = document.getElementById('nc-plano').value;
+  const status = plano === 'Trial' ? 'Trial' : 'Ativo';
+  const vencimento = document.getElementById('nc-venc').value || new Date(Date.now()+30*86400000).toISOString().split('T')[0];
+  const hoje = new Date().toISOString().split('T')[0];
+
+  // Tenta salvar no Supabase
+  try {
+    if (typeof supabase !== 'undefined') {
+      const { error } = await supabase.from('users').insert([{
+        nome: nome,
+        email: email,
+        negocio: document.getElementById('nc-negocio').value || nome,
+        telefone: document.getElementById('nc-tel').value || null,
+        plano: plano === 'Trial' ? 'teste' : 'mensal',
+        data_expiracao: vencimento,
+        created_at: hoje,
+        saldo_caixa: 0
+      }]);
+      if (error) console.warn('Erro ao salvar no Supabase:', error);
+    }
+  } catch (e) {
+    console.warn('Supabase não disponível, salvando localmente:', e);
+  }
+
   contas.push({
     id: contas.length+1,
     nome, email,
     telefone: document.getElementById('nc-tel').value,
     negocio: document.getElementById('nc-negocio').value || nome,
-    plano: document.getElementById('nc-plano').value,
-    status: document.getElementById('nc-plano').value === 'Trial (14 dias)' ? 'Trial' : 'Ativo',
-    vencimento: document.getElementById('nc-venc').value || new Date(Date.now()+30*86400000).toISOString().split('T')[0],
-    criado: new Date().toISOString().split('T')[0],
+    plano: plano,
+    status: status,
+    vencimento: vencimento,
+    criado: hoje,
     obs: document.getElementById('nc-obs').value,
   });
   closeAdmModal('modal-nova-conta');
@@ -474,8 +519,23 @@ function closeAdmModal(id, e) {
 }
 
 // ── INIT ──────────────────────────────────────────────
-// Define data padrão de vencimento (30 dias)
-window.addEventListener('load', () => {
+async function initAdminSession() {
+  try {
+    const sessao = await verificarSessao();
+    if (sessao?.user?.email && ADMIN_ALLOWED_EMAILS.includes(sessao.user.email.toLowerCase())) {
+      document.getElementById('admin-login').classList.add('hidden');
+      document.getElementById('admin-app').classList.remove('hidden');
+      await carregarUsuariosReais();
+      renderAdmDashboard();
+    }
+  } catch (error) {
+    console.warn('Não foi possível validar sessão admin:', error);
+  }
+}
+
+// Define data padrão de vencimento (7 dias)
+window.addEventListener('load', async () => {
+  await initAdminSession();
   const d = new Date(); d.setDate(d.getDate()+7);
   const el = document.getElementById('nc-venc');
   if (el) el.value = d.toISOString().split('T')[0];

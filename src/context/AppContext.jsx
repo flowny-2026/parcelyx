@@ -183,7 +183,7 @@ export function AppProvider({ children }) {
     const { error } = await deleteParcelamentoSupabase(id)
     if (!error) {
       setParcelamentos(parcelamentos.filter(p => p.id !== id))
-      setParcelas(parcelas.filter(p => p.parcelamento_id !== id))
+      setParcelas(parcelas.filter(p => p.parcelamentoId !== id))
       return { success: true }
     }
     return { success: false, error }
@@ -218,9 +218,9 @@ export function AppProvider({ children }) {
     const currentYear = today.getFullYear()
 
     const recebidoMes = parcelas
-      .filter(p => p.status === 'pago' && p.data_pagamento)
+      .filter(p => p.status === 'pago' && p.dataPagamento)
       .filter(p => {
-        const d = new Date(p.data_pagamento)
+        const d = new Date(p.dataPagamento)
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear
       })
       .reduce((sum, p) => sum + p.valor, 0)
@@ -240,8 +240,8 @@ export function AppProvider({ children }) {
 
   const getRecebimentosRecentes = () => {
     return parcelas
-      .filter(p => p.status === 'pago' && p.data_pagamento)
-      .sort((a, b) => new Date(b.data_pagamento) - new Date(a.data_pagamento))
+      .filter(p => p.status === 'pago' && p.dataPagamento)
+      .sort((a, b) => new Date(b.dataPagamento) - new Date(a.dataPagamento))
       .slice(0, 5)
   }
 
@@ -252,9 +252,9 @@ export function AppProvider({ children }) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
       const monthName = d.toLocaleDateString('pt-BR', { month: 'short' })
       const recebido = parcelas
-        .filter(p => p.status === 'pago' && p.data_pagamento)
+        .filter(p => p.status === 'pago' && p.dataPagamento)
         .filter(p => {
-          const pd = new Date(p.data_pagamento)
+          const pd = new Date(p.dataPagamento)
           return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear()
         })
         .reduce((sum, p) => sum + p.valor, 0)
@@ -302,6 +302,7 @@ export function AppProvider({ children }) {
       removeParcelamento,
       marcarPago,
       updateSaldoCaixa,
+      updateUserData,
       logout,
       loadAllData,
       getStats, 

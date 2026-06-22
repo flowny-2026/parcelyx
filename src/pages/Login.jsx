@@ -58,12 +58,8 @@ export default function Login() {
       return
     }
     
-    // Redireciona para admin se for o email admin, mas APÓS autenticação
-    if (loginEmail.toLowerCase().trim() === 'admin@parcelyx.com') {
-      navigate('/admin')
-      return
-    }
-    
+    // Admin é autenticado pelo Supabase e redirecionado ao clicar em "Acesso Administrativo"
+    // A página /admin (Admin.jsx) redireciona para admin.html que gerencia a própria auth
     navigate('/')
   }
 

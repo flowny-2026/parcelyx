@@ -15,6 +15,29 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+// ====== MAPEADOR snake_case → camelCase ======
+// O Supabase retorna "cliente_nome", mas o React espera "clienteNome"
+// Esta função converte automaticamente as chaves dos objetos
+
+function toCamel(str) {
+  return str.replace(/_([a-z])/g, (_, l) => l.toUpperCase())
+}
+
+function toSnake(str) {
+  return str.replace(/[A-Z]/g, l => '_' + l.toLowerCase())
+}
+
+function mapKeys(obj, converter) {
+  if (obj === null || obj === undefined) return obj
+  if (Array.isArray(obj)) return obj.map(item => mapKeys(item, converter))
+  if (typeof obj !== 'object') return obj
+  const result = {}
+  for (const [key, value] of Object.entries(obj)) {
+    result[converter(key)] = value
+  }
+  return result
+}
+
 // ====== AUTENTICAÇÃO ======
 
 export async function signUp(email, password, userData) {
@@ -88,29 +111,29 @@ export async function getClientes() {
     .select('*')
     .order('created_at', { ascending: false })
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 export async function createCliente(cliente) {
   const user = await getCurrentUser()
   const { data, error } = await supabase
     .from('clientes')
-    .insert([{ ...cliente, user_id: user.id }])
+    .insert([{ ...mapKeys(cliente, toSnake), user_id: user.id }])
     .select()
     .single()
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 export async function updateCliente(id, updates) {
   const { data, error } = await supabase
     .from('clientes')
-    .update(updates)
+    .update(mapKeys(updates, toSnake))
     .eq('id', id)
     .select()
     .single()
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 export async function deleteCliente(id) {
@@ -130,31 +153,35 @@ export async function getParcelamentos() {
     .select('*')
     .order('created_at', { ascending: false })
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 export async function createParcelamento(parcelamento) {
   try {
     const user = await getCurrentUser()
     
+    // Converte camelCase do React para snake_case do Supabase
+    const parcelamentoSnake = mapKeys(parcelamento, toSnake)
+    
     // Criar parcelamento
     const { data: parcData, error: parcError } = await supabase
       .from('parcelamentos')
-      .insert([{ ...parcelamento, user_id: user.id }])
+      .insert([{ ...parcelamentoSnake, user_id: user.id }])
       .select()
       .single()
 
     if (parcError) throw parcError
 
-    // Gerar parcelas
-    const parcelas = generateParcelas(parcData)
+    // Gera parcelas - usa o objeto retornado (snake_case) + os dados do form
+    const dadosCompletos = { ...parcData, ...parcelamentoSnake }
+    const parcelas = generateParcelas(dadosCompletos)
     const { error: parcelasError } = await supabase
       .from('parcelas')
       .insert(parcelas.map(p => ({ ...p, user_id: user.id })))
 
     if (parcelasError) throw parcelasError
 
-    return { data: parcData, error: null }
+    return { data: mapKeys(parcData, toCamel), error: null }
   } catch (error) {
     return { data: null, error }
   }
@@ -163,12 +190,12 @@ export async function createParcelamento(parcelamento) {
 export async function updateParcelamento(id, updates) {
   const { data, error } = await supabase
     .from('parcelamentos')
-    .update(updates)
+    .update(mapKeys(updates, toSnake))
     .eq('id', id)
     .select()
     .single()
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 export async function deleteParcelamento(id) {
@@ -188,7 +215,7 @@ export async function getParcelas() {
     .select('*')
     .order('vencimento', { ascending: true })
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 export async function marcarParcelaPaga(id) {
@@ -202,32 +229,36 @@ export async function marcarParcelaPaga(id) {
     .select()
     .single()
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 // ====== USUÁRIO ======
 
 export async function getUserData() {
   const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Usuário não autenticado') }
+  
   const { data, error } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
     .single()
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 export async function updateUserData(updates) {
   const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Usuário não autenticado') }
+  
   const { data, error } = await supabase
     .from('users')
-    .update(updates)
+    .update(mapKeys(updates, toSnake))
     .eq('id', user.id)
     .select()
     .single()
   
-  return { data, error }
+  return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
 // ====== HELPER ======
