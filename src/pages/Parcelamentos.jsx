@@ -102,21 +102,21 @@ export default function Parcelamentos() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-3xl w-full max-w-lg shadow-elevated animate-fade-in" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <div className="relative bg-white rounded-t-3xl md:rounded-3xl w-full max-w-lg shadow-elevated animate-slide-up" style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
             {/* Header fixo */}
-            <div className="px-6 py-4 border-b border-neutral-100" style={{ flexShrink: 0 }}>
+            <div className="px-4 md:px-6 py-4 border-b border-neutral-100" style={{ flexShrink: 0 }}>
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-neutral-900">Novo parcelamento</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-neutral-100">
+                <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-neutral-100 active:bg-neutral-200 transition-colors">
                   <X className="w-5 h-5 text-neutral-500" />
                 </button>
               </div>
             </div>
             {/* Form com scroll */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-3 md:space-y-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">Cliente *</label>
                 <select

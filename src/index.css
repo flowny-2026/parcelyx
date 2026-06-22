@@ -14,6 +14,15 @@ body {
   color: #171717;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Previne zoom em inputs no iOS */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Melhora touch targets no mobile */
+@media (max-width: 768px) {
+  button, a, input, textarea, select {
+    min-height: 44px; /* Tamanho mínimo recomendado Apple HIG */
+  }
 }
 
 /* Custom scrollbar */
@@ -45,6 +54,11 @@ body {
   to { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
 }
@@ -53,14 +67,20 @@ body {
   animation: slideIn 0.3s ease-out forwards;
 }
 
-/* Card hover effect */
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+/* Card hover effect - desabilitado no mobile para melhor performance */
 .card-hover {
   transition: all 0.2s ease;
 }
 
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+@media (min-width: 768px) {
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+  }
 }
 
 /* Status badges */
@@ -76,9 +96,75 @@ body {
   @apply bg-red-50 text-red-700 border border-red-200;
 }
 
-/* Mobile bottom nav */
+/* Mobile optimizations */
 @media (max-width: 768px) {
+  /* Bottom navigation safe area */
   .mobile-nav {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Melhor experiência de scroll no mobile */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Inputs maiores no mobile */
+  input, textarea, select {
+    font-size: 16px !important; /* Previne zoom no iOS */
+  }
+  
+  /* Modais ocupam toda tela no mobile */
+  .mobile-full-modal {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+    max-width: 100%;
+    max-height: 100%;
+  }
+  
+  /* Cards com melhor espaçamento no mobile */
+  .mobile-card {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Botões flutuantes no mobile */
+  .mobile-fab {
+    position: fixed;
+    bottom: calc(4rem + env(safe-area-inset-bottom));
+    right: 1rem;
+    z-index: 40;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+}
+
+/* Otimizações para telas muito pequenas (<375px) */
+@media (max-width: 375px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .text-2xl {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Suporte para notch e safe areas */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Melhora performance de animações no mobile */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

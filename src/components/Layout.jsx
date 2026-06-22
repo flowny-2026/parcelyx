@@ -145,27 +145,27 @@ export default function Layout() {
         </header>
 
         {/* Page content */}
-        <main className="p-4 md:p-8 max-w-7xl mx-auto">
+        <main className="p-3 md:p-4 lg:p-8 max-w-7xl mx-auto">
           <Outlet />
         </main>
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 mobile-nav z-30">
-        <div className="flex items-center justify-around h-16 px-2">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 mobile-nav z-30 safe-area-bottom">
+        <div className="flex items-center justify-around h-14 md:h-16 px-1">
           {navItems.slice(0, 5).map(item => (
             <NavLink
               key={item.path}
               to={item.path}
               end={item.path === '/'}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-1 px-2 py-1 rounded-lg transition-colors ${
+                `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] ${
                   isActive ? 'text-primary-600' : 'text-neutral-400'
                 }`
               }
             >
-              <item.icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{item.label.slice(0, 8)}</span>
+              <item.icon className="w-5 h-5" strokeWidth={2.5} />
+              <span className="text-[10px] font-medium truncate max-w-full">{item.label.slice(0, 10)}</span>
             </NavLink>
           ))}
         </div>
