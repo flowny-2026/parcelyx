@@ -1,15 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Configuração usando variáveis de ambiente
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Configuração usando variáveis de ambiente com fallback
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rflwwbzqfpivezcnhbum.supabase.co'
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmbHd3YnpxZnBpdmV6Y25oYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3Mjg0MzAsImV4cCI6MjA5NzMwNDQzMH0.NZyqEyACBGlB7Ckywa0Cci4d4AFq2eQdDycx1OfRoo0'
 
-// Validação de configuração
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error(
-    'Credenciais do Supabase não configuradas. ' +
-    'Verifique se as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY ' +
-    'estão definidas no arquivo .env'
+// Validação de configuração (apenas warning, não bloqueia)
+if (!import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  console.warn(
+    '⚠️ Credenciais do Supabase não configuradas no ambiente. ' +
+    'Usando credenciais padrão. Configure as variáveis VITE_SUPABASE_URL ' +
+    'e VITE_SUPABASE_ANON_KEY no Vercel.'
   )
 }
 
