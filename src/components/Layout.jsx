@@ -36,9 +36,9 @@ export default function Layout() {
         <div className="flex items-center h-16 px-6 border-b border-neutral-100">
           <div className="flex items-center gap-2">
             <img 
-              src="/img/100x67px.png" 
+              src="/img/140x93px.png" 
               alt="Parcelyx" 
-              className="h-8 w-auto object-contain"
+              className="h-12 w-auto object-contain"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = '/img/icon-192.png';
@@ -93,9 +93,9 @@ export default function Layout() {
             <div className="flex items-center justify-between h-16 px-6 border-b border-neutral-100">
               <div className="flex items-center gap-2">
                 <img 
-                  src="/img/100x67px.png" 
+                  src="/img/140x93px.png" 
                   alt="Parcelyx" 
-                  className="h-8 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = '/img/icon-192.png';
@@ -140,9 +140,9 @@ export default function Layout() {
             </button>
             <div className="flex items-center gap-2">
               <img 
-                src="/img/100x67px.png" 
+                src="/img/140x93px.png" 
                 alt="Parcelyx" 
-                className="h-7 w-auto object-contain"
+                className="h-10 w-auto object-contain"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = '/img/icon-192.png';
