@@ -64,7 +64,7 @@ export default function Parcelamentos() {
 
       {/* Form expansível */}
       {showForm && (
-        <div className="bg-white rounded-2xl p-6 shadow-card animate-fade-in border-2 border-primary-200">
+        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-card animate-fade-in border-2 border-primary-200">
           <h2 className="text-lg font-bold text-neutral-900 mb-4">Criar novo parcelamento</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -108,7 +108,7 @@ export default function Parcelamentos() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">Parcelas *</label>
                 <input
@@ -131,7 +131,7 @@ export default function Parcelamentos() {
                   placeholder="2"
                 />
               </div>
-              <div>
+              <div className="col-span-2 md:col-span-1">
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">Dia venc. *</label>
                 <input
                   type="number"
@@ -157,17 +157,17 @@ export default function Parcelamentos() {
               />
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
                 type="submit"
-                className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all shadow-sm"
+                className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-semibold rounded-xl transition-all shadow-sm"
               >
                 Criar parcelamento
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-6 py-3 border border-neutral-200 text-neutral-600 font-semibold rounded-xl hover:bg-neutral-50 transition-all"
+                className="sm:w-auto px-6 py-3 border border-neutral-200 text-neutral-600 font-semibold rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-all"
               >
                 Cancelar
               </button>
