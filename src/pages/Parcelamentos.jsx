@@ -100,21 +100,29 @@ export default function Parcelamentos() {
         ))}
       </div>
 
-      {/* Modal */}
+      {/* Modal - ESTRUTURA DEFINITIVA */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-3xl w-full max-w-lg my-8 shadow-elevated animate-slide-up" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
-            {/* Header fixo */}
-            <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-neutral-100 bg-white rounded-t-3xl sticky top-0 z-10">
-              <h2 className="text-lg font-semibold text-neutral-900">Novo parcelamento</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-neutral-100 active:bg-neutral-200 transition-colors">
-                <X className="w-5 h-5 text-neutral-500" />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowModal(false)}>
+          <div 
+            className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+              <h2 className="text-xl font-bold text-gray-900">Novo parcelamento</h2>
+              <button 
+                type="button"
+                onClick={() => setShowModal(false)} 
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            {/* Form com scroll */}
-            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
-              <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-3 md:space-y-4">
+            
+            {/* Body com scroll */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <form onSubmit={handleSubmit} className="space-y-4" id="form-parcelamento">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">Cliente *</label>
                 <select

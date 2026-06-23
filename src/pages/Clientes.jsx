@@ -84,79 +84,94 @@ export default function Clientes() {
         ))}
       </div>
 
-      {/* Modal */}
+      {/* Modal - ESTRUTURA DEFINITIVA */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-3xl w-full max-w-lg my-8 shadow-elevated animate-slide-up" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
-            {/* Header fixo */}
-            <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-neutral-100 bg-white rounded-t-3xl sticky top-0 z-10">
-              <h2 className="text-lg font-semibold text-neutral-900">Novo cliente</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-neutral-100 active:bg-neutral-200 transition-colors">
-                <X className="w-5 h-5 text-neutral-500" />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowModal(false)}>
+          <div 
+            className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+              <h2 className="text-xl font-bold text-gray-900">Novo cliente</h2>
+              <button 
+                type="button"
+                onClick={() => setShowModal(false)} 
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            {/* Form com scroll */}
-            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
-              <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-3 md:space-y-4">
+            
+            {/* Body com scroll */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <form onSubmit={handleSubmit} className="space-y-4" id="form-cliente">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Nome *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Nome completo *</label>
                 <input
                   type="text"
                   required
                   value={form.nome}
                   onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                  className="w-full px-3 md:px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-base"
-                  placeholder="Nome completo"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base"
+                  placeholder="Digite o nome completo"
                 />
               </div>
+              
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Telefone *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Telefone / WhatsApp *</label>
                 <input
                   type="tel"
                   required
                   value={form.telefone}
                   onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-                  className="w-full px-3 md:px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-base"
-                  placeholder="(11) 99999-9999"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base"
+                  placeholder="(00) 00000-0000"
                 />
               </div>
+              
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">CPF</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">CPF (opcional)</label>
                 <input
                   type="text"
                   value={form.cpf}
                   onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-                  className="w-full px-3 md:px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-base"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base"
                   placeholder="000.000.000-00"
                 />
               </div>
+              
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Endereço</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Endereço (opcional)</label>
                 <input
                   type="text"
                   value={form.endereco}
                   onChange={(e) => setForm({ ...form, endereco: e.target.value })}
-                  className="w-full px-3 md:px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-base"
-                  placeholder="Rua, número, bairro"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base"
+                  placeholder="Rua, número, bairro, cidade"
                 />
               </div>
+              
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Observações</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Observações (opcional)</label>
                 <textarea
                   value={form.observacoes}
                   onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-                  className="w-full px-3 md:px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-base resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base resize-none"
                   rows={3}
                   placeholder="Anotações sobre o cliente"
                 />
               </div>
+              
+              <div className="pt-4">
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-semibold rounded-xl transition-all shadow-sm"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-base font-bold rounded-lg transition-colors shadow-lg"
                 >
-                  Cadastrar cliente
+                  Cadastrar Cliente
                 </button>
+              </div>
               </form>
             </div>
           </div>
