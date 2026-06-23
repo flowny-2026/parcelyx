@@ -100,29 +100,32 @@ export default function Parcelamentos() {
         ))}
       </div>
 
-      {/* Modal - ESTRUTURA DEFINITIVA */}
+      {/* Modal - SCROLL NO TOPO GARANTIDO */}
       {showModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowModal(false)}>
-          <div 
-            className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-slide-up"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
-              <h2 className="text-xl font-bold text-gray-900">Novo parcelamento</h2>
-              <button 
-                type="button"
-                onClick={() => setShowModal(false)} 
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
+        <div className="fixed inset-0 z-[9999] overflow-y-auto" onClick={() => setShowModal(false)}>
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
             
-            {/* Body com scroll */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <form onSubmit={handleSubmit} className="space-y-4" id="form-parcelamento">
+            <div 
+              className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl my-8"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxHeight: 'calc(100vh - 4rem)' }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-2xl sticky top-0 z-10">
+                <h2 className="text-xl font-bold text-gray-900">Novo parcelamento</h2>
+                <button 
+                  type="button"
+                  onClick={() => setShowModal(false)} 
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              
+              {/* Body com scroll */}
+              <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
+                <form onSubmit={handleSubmit} className="space-y-4" id="form-parcelamento">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">Cliente *</label>
                 <select
