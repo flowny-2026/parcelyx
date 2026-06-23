@@ -126,99 +126,100 @@ export default function Parcelamentos() {
               {/* Body com scroll */}
               <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
                 <form onSubmit={handleSubmit} className="space-y-4" id="form-parcelamento">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Cliente *</label>
-                <select
-                  required
-                  value={form.clienteId}
-                  onChange={(e) => setForm({ ...form, clienteId: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm bg-white"
-                >
-                  <option value="">Selecione um cliente</option>
-                  {clientes.map(c => (
-                    <option key={c.id} value={c.id}>{c.nome}</option>
-                  ))}
-                </select>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Cliente *</label>
+                    <select
+                      required
+                      value={form.clienteId}
+                      onChange={(e) => setForm({ ...form, clienteId: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm bg-white"
+                    >
+                      <option value="">Selecione um cliente</option>
+                      {clientes.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">Valor total *</label>
+                      <input
+                        type="number"
+                        required
+                        step="0.01"
+                        value={form.valorTotal}
+                        onChange={(e) => setForm({ ...form, valorTotal: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                        placeholder="0,00"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">Entrada</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.entrada}
+                        onChange={(e) => setForm({ ...form, entrada: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                        placeholder="0,00"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">Parcelas *</label>
+                      <input
+                        type="number"
+                        required
+                        value={form.parcelas}
+                        onChange={(e) => setForm({ ...form, parcelas: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                        placeholder="12"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">Juros %</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={form.juros}
+                        onChange={(e) => setForm({ ...form, juros: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                        placeholder="2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1.5">Dia venc. *</label>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        max="31"
+                        value={form.vencimento}
+                        onChange={(e) => setForm({ ...form, vencimento: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                        placeholder="15"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">Observações</label>
+                    <textarea
+                      value={form.observacoes}
+                      onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm resize-none"
+                      rows={2}
+                      placeholder="Detalhes do parcelamento"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all shadow-sm"
+                  >
+                    Criar parcelamento
+                  </button>
+                </form>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Valor total *</label>
-                  <input
-                    type="number"
-                    required
-                    step="0.01"
-                    value={form.valorTotal}
-                    onChange={(e) => setForm({ ...form, valorTotal: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Entrada</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.entrada}
-                    onChange={(e) => setForm({ ...form, entrada: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
-                    placeholder="0,00"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Parcelas *</label>
-                  <input
-                    type="number"
-                    required
-                    value={form.parcelas}
-                    onChange={(e) => setForm({ ...form, parcelas: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
-                    placeholder="12"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Juros %</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.juros}
-                    onChange={(e) => setForm({ ...form, juros: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
-                    placeholder="2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Dia venc. *</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    max="31"
-                    value={form.vencimento}
-                    onChange={(e) => setForm({ ...form, vencimento: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
-                    placeholder="15"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Observações</label>
-                <textarea
-                  value={form.observacoes}
-                  onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm resize-none"
-                  rows={2}
-                  placeholder="Detalhes do parcelamento"
-                />
-              </div>
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all shadow-sm"
-                >
-                  Criar parcelamento
-                </button>
-              </form>
             </div>
           </div>
         </div>

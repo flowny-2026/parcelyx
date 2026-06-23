@@ -6,7 +6,7 @@ import { signIn, signUp } from '../lib/supabase'
 const LOGO = (
   <div className="text-center mb-8">
     <div className="inline-flex items-center justify-center bg-white rounded-2xl shadow-lg p-6 mb-4">
-      <img src="/img/180x120px.png" alt="Parcelyx" style={{height: '80px', width: 'auto'}} />
+      <img src="/img/180x120px.png" alt="Parcelyx" style={{height: '120px', width: 'auto'}} />
     </div>
   </div>
 )

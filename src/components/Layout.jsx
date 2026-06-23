@@ -38,7 +38,7 @@ export default function Layout() {
             <img 
               src="/img/140x93px.png" 
               alt="Parcelyx" 
-              className="h-12 w-auto object-contain"
+              className="h-16 w-auto object-contain"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = '/img/icon-192.png';
@@ -95,7 +95,7 @@ export default function Layout() {
                 <img 
                   src="/img/140x93px.png" 
                   alt="Parcelyx" 
-                  className="h-12 w-auto object-contain"
+                  className="h-16 w-auto object-contain"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = '/img/icon-192.png';
@@ -142,7 +142,7 @@ export default function Layout() {
               <img 
                 src="/img/140x93px.png" 
                 alt="Parcelyx" 
-                className="h-10 w-auto object-contain"
+                className="h-14 w-auto object-contain"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = '/img/icon-192.png';
