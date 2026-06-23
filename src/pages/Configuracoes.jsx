@@ -193,7 +193,10 @@ export default function Configuracoes() {
 
         {/* Version */}
         <p className="text-center text-xs text-neutral-400 pt-4">
-          Parcelyx v1.0.0 • Feito com ❤️ para pequenos negócios
+          Parcelyx v1.0.0 • © 2026 Todos os direitos reservados
+        </p>
+        <p className="text-center text-xs text-neutral-500 mt-1">
+          Sistema de gestão financeira profissional
         </p>
       </div>
     </div>

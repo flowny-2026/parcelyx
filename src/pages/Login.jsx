@@ -191,7 +191,7 @@ export default function Login() {
         </div>
       </div>
 
-      <p className="text-blue-300 text-xs mt-6">© 2025 Parcelyx. Todos os direitos reservados.</p>
+      <p className="text-blue-200 text-xs mt-6">© 2026 Parcelyx. Todos os direitos reservados.</p>
     </div>
   )
 
