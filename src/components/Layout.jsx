@@ -89,7 +89,7 @@ export default function Layout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 w-72 bg-white shadow-elevated z-50 animate-slide-in">
+          <aside className="fixed inset-y-0 left-0 w-72 bg-white shadow-elevated z-50 animate-slide-in flex flex-col">
             <div className="flex items-center justify-between h-16 px-6 border-b border-neutral-100">
               <div className="flex items-center gap-2">
                 <img 
@@ -106,7 +106,7 @@ export default function Layout() {
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
-            <nav className="px-3 py-4 space-y-1">
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
               {navItems.map(item => (
                 <NavLink
                   key={item.path}
@@ -126,6 +126,28 @@ export default function Layout() {
                 </NavLink>
               ))}
             </nav>
+            {/* User info footer - Mobile */}
+            <div className="p-4 border-t border-neutral-100">
+              <div className="flex items-center gap-3 px-3 py-2">
+                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                  <span className="text-base font-semibold text-primary-700">{inicialExibida}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-neutral-900 truncate">{nomeExibido}</p>
+                  <p className="text-xs text-neutral-500 truncate">{emailExibido}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSidebarOpen(false)
+                    logout()
+                  }}
+                  title="Sair"
+                  className="p-2 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-600 transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
           </aside>
         </div>
       )}
