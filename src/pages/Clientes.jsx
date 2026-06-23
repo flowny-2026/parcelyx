@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { Plus, Search, Phone, User, X } from 'lucide-react'
+import { Plus, Search, Phone, User, X, ChevronDown } from 'lucide-react'
 
 export default function Clientes() {
   const { clientes, addCliente } = useApp()
-  const [showModal, setShowModal] = useState(false)
+  const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [form, setForm] = useState({ nome: '', telefone: '', cpf: '', endereco: '', observacoes: '' })
 
@@ -18,7 +18,7 @@ export default function Clientes() {
     e.preventDefault()
     addCliente(form)
     setForm({ nome: '', telefone: '', cpf: '', endereco: '', observacoes: '' })
-    setShowModal(false)
+    setShowForm(false)
   }
 
   return (
@@ -30,13 +30,98 @@ export default function Clientes() {
           <p className="text-sm text-neutral-500 mt-1">{clientes.length} clientes cadastrados</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-all shadow-sm"
         >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Novo cliente</span>
+          {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          <span className="hidden sm:inline">{showForm ? 'Fechar' : 'Novo cliente'}</span>
         </button>
       </div>
+
+      {/* Form expansível */}
+      {showForm && (
+        <div className="bg-white rounded-2xl p-6 shadow-card animate-fade-in border-2 border-primary-200">
+          <h2 className="text-lg font-bold text-neutral-900 mb-4">Cadastrar novo cliente</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Nome completo *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.nome}
+                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                  placeholder="Digite o nome completo"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Telefone / WhatsApp *</label>
+                <input
+                  type="tel"
+                  required
+                  value={form.telefone}
+                  onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">CPF (opcional)</label>
+                <input
+                  type="text"
+                  value={form.cpf}
+                  onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Endereço (opcional)</label>
+                <input
+                  type="text"
+                  value={form.endereco}
+                  onChange={(e) => setForm({ ...form, endereco: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm"
+                  placeholder="Rua, número, bairro, cidade"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">Observações (opcional)</label>
+              <textarea
+                value={form.observacoes}
+                onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-sm resize-none"
+                rows={2}
+                placeholder="Anotações sobre o cliente"
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all shadow-sm"
+              >
+                Cadastrar Cliente
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="px-6 py-3 border border-neutral-200 text-neutral-600 font-semibold rounded-xl hover:bg-neutral-50 transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">
@@ -83,104 +168,6 @@ export default function Clientes() {
           </div>
         ))}
       </div>
-
-      {/* Modal - SCROLL NO TOPO GARANTIDO */}
-      {showModal && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto" onClick={() => setShowModal(false)}>
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
-            
-            <div 
-              className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl my-8"
-              onClick={(e) => e.stopPropagation()}
-              style={{ maxHeight: 'calc(100vh - 4rem)' }}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-2xl sticky top-0 z-10">
-                <h2 className="text-xl font-bold text-gray-900">Novo cliente</h2>
-                <button 
-                  type="button"
-                  onClick={() => setShowModal(false)} 
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-              
-              {/* Body com scroll */}
-              <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
-                <form onSubmit={handleSubmit} className="space-y-4" id="form-cliente">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Nome completo *</label>
-                    <input
-                      type="text"
-                      required
-                      value={form.nome}
-                      onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base"
-                      placeholder="Digite o nome completo"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Telefone / WhatsApp *</label>
-                    <input
-                      type="tel"
-                      required
-                      value={form.telefone}
-                      onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base"
-                      placeholder="(00) 00000-0000"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">CPF (opcional)</label>
-                    <input
-                      type="text"
-                      value={form.cpf}
-                      onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base"
-                      placeholder="000.000.000-00"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Endereço (opcional)</label>
-                    <input
-                      type="text"
-                      value={form.endereco}
-                      onChange={(e) => setForm({ ...form, endereco: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base"
-                      placeholder="Rua, número, bairro, cidade"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Observações (opcional)</label>
-                    <textarea
-                      value={form.observacoes}
-                      onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-base resize-none"
-                      rows={3}
-                      placeholder="Anotações sobre o cliente"
-                    />
-                  </div>
-                  
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-base font-bold rounded-lg transition-colors shadow-lg"
-                    >
-                      Cadastrar Cliente
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
