@@ -2,17 +2,18 @@ import React, { useState } from 'react'
 import { Outlet, NavLink, useLocation, Navigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, CreditCard, Receipt,
-  MessageSquare, PieChart, Settings, Menu, X, LogOut
+  MessageSquare, PieChart, Settings, Menu, X, LogOut, DollarSign, Bell, Eye
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
 const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/', icon: LayoutDashboard, label: 'Início' },
+  { path: '/parcelamentos', icon: CreditCard, label: 'Contratos' },
   { path: '/clientes', icon: Users, label: 'Clientes' },
-  { path: '/parcelamentos', icon: CreditCard, label: 'Parcelamentos' },
   { path: '/parcelas', icon: Receipt, label: 'Parcelas' },
   { path: '/cobrancas', icon: MessageSquare, label: 'Cobranças' },
   { path: '/financeiro', icon: PieChart, label: 'Financeiro' },
+  { path: '/pagamentos', icon: DollarSign, label: 'Pagamentos' },
   { path: '/configuracoes', icon: Settings, label: 'Configurações' },
 ]
 
@@ -30,10 +31,10 @@ export default function Layout() {
   const inicialExibida = nomeExibido.charAt(0).toUpperCase()
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex">
+    <div className="min-h-screen bg-dark-900 flex">
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-neutral-200">
-        <div className="flex items-center h-16 px-6 border-b border-neutral-100">
+      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-dark-800 border-r border-dark-500/50">
+        <div className="flex items-center h-16 px-6 border-b border-dark-500/50">
           <div className="flex items-center gap-2">
             <img 
               src="/img/140x93px.png" 
@@ -55,8 +56,8 @@ export default function Layout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                    ? 'bg-pix-500/10 text-pix-400 border border-pix-500/20'
+                    : 'text-gray-400 hover:bg-dark-600 hover:text-gray-200 border border-transparent'
                 }`
               }
             >
@@ -65,19 +66,19 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-neutral-100">
+        <div className="p-4 border-t border-dark-500/50">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-semibold text-primary-700">{inicialExibida}</span>
+            <div className="w-8 h-8 bg-pix-500/20 rounded-full flex items-center justify-center">
+              <span className="text-sm font-semibold text-pix-400">{inicialExibida}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-900 truncate">{nomeExibido}</p>
-              <p className="text-xs text-neutral-500 truncate">{emailExibido}</p>
+              <p className="text-sm font-medium text-gray-200 truncate">{nomeExibido}</p>
+              <p className="text-xs text-gray-500 truncate">{emailExibido}</p>
             </div>
             <button
               onClick={logout}
               title="Sair"
-              className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-dark-600 text-gray-500 hover:text-red-400 transition-colors"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -88,9 +89,9 @@ export default function Layout() {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 w-72 bg-white shadow-elevated z-50 animate-slide-in flex flex-col">
-            <div className="flex items-center justify-between h-16 px-6 border-b border-neutral-100">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <aside className="fixed inset-y-0 left-0 w-72 bg-dark-800 shadow-elevated z-50 animate-slide-in flex flex-col">
+            <div className="flex items-center justify-between h-16 px-6 border-b border-dark-500/50">
               <div className="flex items-center gap-2">
                 <img 
                   src="/img/140x93px.png" 
@@ -102,8 +103,8 @@ export default function Layout() {
                   }}
                 />
               </div>
-              <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-neutral-100">
-                <X className="w-5 h-5 text-neutral-500" />
+              <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-dark-600">
+                <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -116,8 +117,8 @@ export default function Layout() {
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? 'bg-primary-50 text-primary-700'
-                        : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                        ? 'bg-pix-500/10 text-pix-400 border border-pix-500/20'
+                        : 'text-gray-400 hover:bg-dark-600 hover:text-gray-200 border border-transparent'
                     }`
                   }
                 >
@@ -126,15 +127,14 @@ export default function Layout() {
                 </NavLink>
               ))}
             </nav>
-            {/* User info footer - Mobile */}
-            <div className="p-4 border-t border-neutral-100">
+            <div className="p-4 border-t border-dark-500/50">
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-base font-semibold text-primary-700">{inicialExibida}</span>
+                <div className="w-10 h-10 bg-pix-500/20 rounded-full flex items-center justify-center">
+                  <span className="text-base font-semibold text-pix-400">{inicialExibida}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-neutral-900 truncate">{nomeExibido}</p>
-                  <p className="text-xs text-neutral-500 truncate">{emailExibido}</p>
+                  <p className="text-sm font-medium text-gray-200 truncate">{nomeExibido}</p>
+                  <p className="text-xs text-gray-500 truncate">{emailExibido}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -142,7 +142,7 @@ export default function Layout() {
                     logout()
                   }}
                   title="Sair"
-                  className="p-2 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-600 transition-colors"
+                  className="p-2 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-colors"
                 >
                   <LogOut className="w-5 h-5" />
                 </button>
@@ -155,10 +155,10 @@ export default function Layout() {
       {/* Main content */}
       <div className="flex-1 md:ml-64">
         {/* Top bar mobile */}
-        <header className="md:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-neutral-200">
+        <header className="md:hidden sticky top-0 z-30 bg-dark-800/90 backdrop-blur-md border-b border-dark-500/50">
           <div className="flex items-center justify-between h-14 px-4">
-            <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-lg hover:bg-neutral-100">
-              <Menu className="w-5 h-5 text-neutral-700" />
+            <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-lg hover:bg-dark-600">
+              <Menu className="w-5 h-5 text-gray-300" />
             </button>
             <div className="flex items-center gap-2">
               <img 
@@ -171,7 +171,11 @@ export default function Layout() {
                 }}
               />
             </div>
-            <div className="w-9" />
+            <div className="flex items-center gap-2">
+              <button className="p-2 rounded-lg hover:bg-dark-600">
+                <Bell className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -182,8 +186,8 @@ export default function Layout() {
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 mobile-nav z-30 safe-area-bottom">
-        <div className="flex items-center justify-around h-14 md:h-16 px-1">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-dark-500/50 mobile-nav z-30 safe-area-bottom">
+        <div className="flex items-center justify-around h-16 px-1">
           {navItems.slice(0, 5).map(item => (
             <NavLink
               key={item.path}
@@ -191,7 +195,7 @@ export default function Layout() {
               end={item.path === '/'}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] ${
-                  isActive ? 'text-primary-600' : 'text-neutral-400'
+                  isActive ? 'text-pix-400' : 'text-gray-500'
                 }`
               }
             >
