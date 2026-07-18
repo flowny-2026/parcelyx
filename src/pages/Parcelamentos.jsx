@@ -56,7 +56,7 @@ export default function Parcelamentos() {
           <p className="text-sm text-gray-400 mt-1">{parcelamentos.length} contratos</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-pix-500 hover:bg-pix-600 text-white text-sm font-medium rounded-xl transition-all">
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-all">
           {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           <span className="hidden sm:inline">{showForm ? 'Fechar' : 'Novo'}</span>
         </button>
@@ -117,7 +117,7 @@ export default function Parcelamentos() {
                 className={inputClass + " resize-none"} rows={2} placeholder="Detalhes do contrato" />
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button type="submit" className="flex-1 py-3 bg-pix-500 hover:bg-pix-600 text-white font-semibold rounded-xl transition-all">
+              <button type="submit" className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all">
                 Criar contrato
               </button>
               <button type="button" onClick={() => setShowForm(false)}

@@ -150,9 +150,9 @@ export default function Login() {
   if (tela === 'login') return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-dark-900">
       {/* Badge acesso seguro */}
-      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pix-500/10 border border-pix-500/30 mb-6">
-        <Shield className="w-4 h-4 text-pix-400" />
-        <span className="text-xs font-medium text-pix-400">Acesso seguro</span>
+      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/30 mb-6">
+        <Shield className="w-4 h-4 text-primary-400" />
+        <span className="text-xs font-medium text-primary-400">Acesso seguro</span>
       </div>
 
       {LOGO}
@@ -201,7 +201,7 @@ export default function Login() {
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-glow-green">
+            className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-glow-blue">
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {loading ? 'Entrando...' : 'Entrar e continuar'}
           </button>
@@ -210,11 +210,11 @@ export default function Login() {
         {/* Badges de segurança */}
         <div className="flex items-center justify-center gap-3 mt-6">
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-dark-700 border border-dark-500/50">
-            <Shield className="w-3.5 h-3.5 text-pix-400" />
+            <Shield className="w-3.5 h-3.5 text-primary-400" />
             <span className="text-xs text-gray-400">Criptografado</span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-dark-700 border border-dark-500/50">
-            <Headphones className="w-3.5 h-3.5 text-pix-400" />
+            <Headphones className="w-3.5 h-3.5 text-primary-400" />
             <span className="text-xs text-gray-400">Suporte humano</span>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function Login() {
       <p className="text-sm text-gray-400 mt-6">
         Ainda não tem conta?{' '}
         <button onClick={() => { setTela('cadastro'); setStep(1); setErro('') }}
-          className="text-pix-400 font-semibold hover:text-pix-300">Cadastre-se</button>
+          className="text-primary-400 font-semibold hover:text-primary-300">Cadastre-se</button>
       </p>
 
       <a href="https://wa.me/5516992383821" target="_blank" rel="noreferrer"
@@ -279,7 +279,7 @@ export default function Login() {
               <input type="password" value={confirmarSenha} onChange={e => setConfirmarSenha(e.target.value)}
                 placeholder="Repita a senha" required className={inputClassNoIcon} />
             </div>
-            <button type="submit" className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 text-white font-semibold rounded-xl transition-all">
+            <button type="submit" className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all">
               Continuar →
             </button>
           </form>
@@ -323,7 +323,7 @@ export default function Login() {
                 ← Voltar
               </button>
               <button type="submit" disabled={loading}
-                className="w-full py-3 bg-pix-500 hover:bg-pix-600 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
+                className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {loading ? 'Criando...' : 'Continuar →'}
               </button>
@@ -356,7 +356,7 @@ export default function Login() {
             </div>
 
             <button onClick={() => setTela('plano')}
-              className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 text-white font-semibold rounded-xl">
+              className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl">
               Escolher plano →
             </button>
           </div>
@@ -365,7 +365,7 @@ export default function Login() {
 
       <p className="text-gray-400 text-sm mt-6">
         Já tem conta?{' '}
-        <button onClick={() => { setTela('login'); setErro('') }} className="text-pix-400 font-semibold">Entrar</button>
+        <button onClick={() => { setTela('login'); setErro('') }} className="text-primary-400 font-semibold">Entrar</button>
       </p>
     </div>
   )
@@ -393,7 +393,7 @@ export default function Login() {
             ))}
           </ul>
           <button onClick={handleTeste}
-            className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 text-white font-bold rounded-xl transition-all">
+            className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all">
             Começar teste grátis
           </button>
           <p className="text-center text-xs text-gray-500 mt-2">Sem cartão de crédito</p>
@@ -430,7 +430,7 @@ export default function Login() {
       <p className="text-gray-400 text-sm mt-8">
         Dúvidas?{' '}
         <a href="https://wa.me/5516992383821?text=Olá!%20Tenho%20dúvidas%20sobre%20o%20Parcelyx" target="_blank" rel="noreferrer"
-          className="text-pix-400 font-semibold underline">
+          className="text-primary-400 font-semibold underline">
           Fale conosco no WhatsApp
         </a>
       </p>

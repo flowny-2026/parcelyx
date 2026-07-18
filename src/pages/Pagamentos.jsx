@@ -87,8 +87,8 @@ export default function Pagamentos() {
           <button key={value} onClick={() => setFilter(value)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
               filter === value
-                ? 'bg-pix-500 text-white'
-                : 'bg-dark-700 text-gray-400 border border-dark-500 hover:border-pix-500/30'
+                ? 'bg-primary-600 text-white'
+                : 'bg-dark-700 text-gray-400 border border-dark-500 hover:border-primary-500/30'
             }`}>
             {label}
           </button>

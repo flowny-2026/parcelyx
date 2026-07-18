@@ -60,8 +60,8 @@ export default function Parcelas() {
           <button key={f.key} onClick={() => setFilter(f.key)}
             className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
               filter === f.key
-                ? 'bg-pix-500 text-white'
-                : 'bg-dark-700 text-gray-400 border border-dark-500 hover:border-pix-500/30'
+                ? 'bg-primary-600 text-white'
+                : 'bg-dark-700 text-gray-400 border border-dark-500 hover:border-primary-500/30'
             }`}>
             {f.label}
           </button>

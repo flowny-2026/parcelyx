@@ -30,19 +30,19 @@ export default function Clientes() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-white">Clientes</h1>
         <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-pix-500 hover:bg-pix-600 text-white text-sm font-medium rounded-xl transition-all">
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-all">
           {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           <span className="hidden sm:inline">{showForm ? 'Fechar' : 'Novo Cliente'}</span>
         </button>
       </div>
 
       {/* Card total de clientes */}
-      <div className="bg-dark-700 rounded-2xl p-4 border border-pix-500/30">
+      <div className="bg-dark-700 rounded-2xl p-4 border border-primary-500/30">
         <div className="flex items-center gap-3 mb-2">
-          <User className="w-5 h-5 text-pix-400" />
+          <User className="w-5 h-5 text-primary-400" />
           <span className="text-sm text-gray-400">Total de clientes</span>
         </div>
-        <p className="text-3xl font-bold text-pix-400">{clientes.length}</p>
+        <p className="text-3xl font-bold text-primary-400">{clientes.length}</p>
         <p className="text-xs text-gray-500">cliente{clientes.length !== 1 ? 's' : ''} cadastrado{clientes.length !== 1 ? 's' : ''}</p>
       </div>
 
@@ -65,8 +65,8 @@ export default function Clientes() {
           <button key={f.key} onClick={() => setFiltro(f.key)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               filtro === f.key
-                ? 'bg-pix-500 text-white'
-                : 'bg-dark-700 text-gray-400 border border-dark-500 hover:border-pix-500/30'
+                ? 'bg-primary-600 text-white'
+                : 'bg-dark-700 text-gray-400 border border-dark-500 hover:border-primary-500/30'
             }`}>
             {f.label} {f.count > 0 && <span className="ml-1 font-bold">{f.count}</span>}
           </button>
@@ -113,7 +113,7 @@ export default function Clientes() {
                 className={inputClass + " resize-none"} rows={2} placeholder="Anotações sobre o cliente" />
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button type="submit" className="flex-1 py-3 bg-pix-500 hover:bg-pix-600 text-white font-semibold rounded-xl transition-all">
+              <button type="submit" className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all">
                 Cadastrar Cliente
               </button>
               <button type="button" onClick={() => setShowForm(false)}
@@ -158,7 +158,7 @@ export default function Clientes() {
       {!showForm && (
         <div className="md:hidden fixed bottom-20 left-4 right-4 z-40">
           <button onClick={() => setShowForm(true)}
-            className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-glow-green">
+            className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-glow-blue">
             <Plus className="w-5 h-5" /> Novo Cliente
           </button>
         </div>

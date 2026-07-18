@@ -11,6 +11,7 @@ import Parcelas from './pages/Parcelas'
 import Cobrancas from './pages/Cobrancas'
 import Financeiro from './pages/Financeiro'
 import Configuracoes from './pages/Configuracoes'
+import Pagamentos from './pages/Pagamentos'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="cobrancas" element={<Cobrancas />} />
             <Route path="financeiro" element={<Financeiro />} />
             <Route path="configuracoes" element={<Configuracoes />} />
+            <Route path="pagamentos" element={<Pagamentos />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

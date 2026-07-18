@@ -56,7 +56,7 @@ export default function Layout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? 'bg-pix-500/10 text-pix-400 border border-pix-500/20'
+                    ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
                     : 'text-gray-400 hover:bg-dark-600 hover:text-gray-200 border border-transparent'
                 }`
               }
@@ -68,8 +68,8 @@ export default function Layout() {
         </nav>
         <div className="p-4 border-t border-dark-500/50">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-pix-500/20 rounded-full flex items-center justify-center">
-              <span className="text-sm font-semibold text-pix-400">{inicialExibida}</span>
+            <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
+              <span className="text-sm font-semibold text-primary-400">{inicialExibida}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-200 truncate">{nomeExibido}</p>
@@ -117,7 +117,7 @@ export default function Layout() {
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? 'bg-pix-500/10 text-pix-400 border border-pix-500/20'
+                        ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
                         : 'text-gray-400 hover:bg-dark-600 hover:text-gray-200 border border-transparent'
                     }`
                   }
@@ -129,8 +129,8 @@ export default function Layout() {
             </nav>
             <div className="p-4 border-t border-dark-500/50">
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-10 h-10 bg-pix-500/20 rounded-full flex items-center justify-center">
-                  <span className="text-base font-semibold text-pix-400">{inicialExibida}</span>
+                <div className="w-10 h-10 bg-primary-500/20 rounded-full flex items-center justify-center">
+                  <span className="text-base font-semibold text-primary-400">{inicialExibida}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-200 truncate">{nomeExibido}</p>
@@ -195,7 +195,7 @@ export default function Layout() {
               end={item.path === '/'}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] ${
-                  isActive ? 'text-pix-400' : 'text-gray-500'
+                  isActive ? 'text-primary-400' : 'text-gray-500'
                 }`
               }
             >

@@ -114,7 +114,7 @@ export default function Configuracoes() {
                 <p className="text-xs text-gray-500">Receba alertas de pagamentos</p>
               </div>
               <button onClick={() => setConfig({ ...config, notificacoes: !config.notificacoes })}
-                className={`w-11 h-6 rounded-full transition-colors relative ${config.notificacoes ? 'bg-pix-500' : 'bg-dark-500'}`}>
+                className={`w-11 h-6 rounded-full transition-colors relative ${config.notificacoes ? 'bg-primary-600' : 'bg-dark-500'}`}>
                 <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform ${config.notificacoes ? 'right-0.5' : 'left-0.5'}`} />
               </button>
             </div>
@@ -124,7 +124,7 @@ export default function Configuracoes() {
                 <p className="text-xs text-gray-500">Lembrar clientes antes do vencimento</p>
               </div>
               <button onClick={() => setConfig({ ...config, lembreteAutomatico: !config.lembreteAutomatico })}
-                className={`w-11 h-6 rounded-full transition-colors relative ${config.lembreteAutomatico ? 'bg-pix-500' : 'bg-dark-500'}`}>
+                className={`w-11 h-6 rounded-full transition-colors relative ${config.lembreteAutomatico ? 'bg-primary-600' : 'bg-dark-500'}`}>
                 <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform ${config.lembreteAutomatico ? 'right-0.5' : 'left-0.5'}`} />
               </button>
             </div>
@@ -149,7 +149,7 @@ export default function Configuracoes() {
             setSaving(false)
             setMessage(result.success ? 'Configurações salvas com sucesso.' : 'Falha ao salvar.')
           }} disabled={saving}
-          className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 disabled:opacity-60 text-white font-semibold rounded-xl transition-all">
+          className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-all">
           {saving ? 'Salvando...' : 'Salvar configurações'}
         </button>
 

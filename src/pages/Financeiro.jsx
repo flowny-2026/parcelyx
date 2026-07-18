@@ -76,7 +76,7 @@ export default function Financeiro() {
           {['semanal', 'mensal', 'anual'].map(p => (
             <button key={p} onClick={() => setPeriodo(p)}
               className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${
-                periodo === p ? 'bg-pix-500 text-white' : 'bg-dark-600 text-gray-400 hover:text-gray-200'
+                periodo === p ? 'bg-primary-600 text-white' : 'bg-dark-600 text-gray-400 hover:text-gray-200'
               }`}>
               {p.charAt(0).toUpperCase() + p.slice(1)}
             </button>
