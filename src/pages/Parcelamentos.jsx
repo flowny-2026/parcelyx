@@ -40,7 +40,7 @@ export default function Parcelamentos() {
       entrada: parseFloat(form.entrada) || 0,
       parcelas: parseInt(form.parcelas),
       juros: parseFloat(form.juros) || 0,
-      vencimento: parseInt(form.vencimento),
+      vencimento: form.vencimento, // agora é data completa (YYYY-MM-DD)
       parcelasPagas: parseInt(form.parcelasPagas) || 0,
       status: 'ativo',
       dataCriacao: new Date().toISOString().split('T')[0],
@@ -145,8 +145,8 @@ export default function Parcelamentos() {
                 <p className="text-sm font-semibold text-white">{selectedContrato.parcelas}x</p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Dia vencimento</p>
-                <p className="text-sm font-semibold text-white">Dia {selectedContrato.vencimento}</p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">1ª Parcela</p>
+                <p className="text-sm font-semibold text-white">{selectedContrato.vencimento?.includes?.('-') ? new Date(selectedContrato.vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : `Dia ${selectedContrato.vencimento}`}</p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 uppercase tracking-wide">Entrada</p>
@@ -238,10 +238,10 @@ export default function Parcelamentos() {
                   className={inputClass} placeholder="2" />
               </div>
               <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Dia venc. *</label>
-                <input type="number" required min="1" max="31" value={form.vencimento}
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">1ª parcela vence em *</label>
+                <input type="date" required value={form.vencimento}
                   onChange={(e) => setForm({ ...form, vencimento: e.target.value })}
-                  className={inputClass} placeholder="15" />
+                  className={inputClass} />
               </div>
             </div>
             <div>
@@ -307,8 +307,8 @@ export default function Parcelamentos() {
                 <p className="text-sm font-semibold text-white">{p.parcelas}x</p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Dia vencimento</p>
-                <p className="text-sm font-semibold text-white">Dia {p.vencimento}</p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">1ª Parcela</p>
+                <p className="text-sm font-semibold text-white">{p.vencimento?.includes?.('-') ? new Date(p.vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : `Dia ${p.vencimento}`}</p>
               </div>
             </div>
 

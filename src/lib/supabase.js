@@ -273,34 +273,42 @@ function generateParcelas(parcelamento) {
   const parcelas = []
   const valorParcela = ((parcelamento.valor_total - parcelamento.entrada) * (1 + parcelamento.juros / 100)) / parcelamento.parcelas
   const today = new Date()
-  today.setHours(0, 0, 0, 0) // Normaliza para comparação
+  today.setHours(0, 0, 0, 0)
   const parcelasPagas = parcelamento.parcelas_pagas || 0
 
+  // Vencimento pode ser uma data completa (YYYY-MM-DD) ou um número (dia)
+  const venc = parcelamento.vencimento
+  const isFullDate = typeof venc === 'string' && venc.includes('-')
+
   for (let i = 1; i <= parcelamento.parcelas; i++) {
-    // Cria data base a partir da data de criação
-    const d = new Date(parcelamento.data_criacao)
-    
-    // Primeiro define o dia do vencimento
-    d.setDate(parcelamento.vencimento)
-    
-    // Depois adiciona os meses
-    d.setMonth(d.getMonth() + i)
-    
-    // Ajusta caso o dia não exista no mês (ex: 31 em fevereiro)
-    if (d.getDate() !== parcelamento.vencimento) {
-      d.setDate(0)
+    let d
+
+    if (isFullDate) {
+      // Nova lógica: primeira parcela na data escolhida, demais +1 mês cada
+      d = new Date(venc + 'T12:00:00')
+      d.setMonth(d.getMonth() + (i - 1))
+      // Ajusta dia caso não exista no mês
+      const diaOriginal = new Date(venc + 'T12:00:00').getDate()
+      if (d.getDate() !== diaOriginal) {
+        d.setDate(0)
+      }
+    } else {
+      // Lógica antiga (compatibilidade): usa dia do vencimento
+      d = new Date(parcelamento.data_criacao)
+      d.setDate(parseInt(venc))
+      d.setMonth(d.getMonth() + i)
+      if (d.getDate() !== parseInt(venc)) {
+        d.setDate(0)
+      }
     }
-    
-    // Normaliza para comparação
+
     const dNormalized = new Date(d)
     dNormalized.setHours(0, 0, 0, 0)
-    
-    // Define status baseado na data ou se é parcela já paga (migração)
+
     let status = 'pendente'
     let dataPagamento = null
 
     if (i <= parcelasPagas) {
-      // Parcela já paga (migração de outro sistema)
       status = 'pago'
       dataPagamento = d.toISOString().split('T')[0]
     } else if (dNormalized < today) {
