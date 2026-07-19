@@ -14,11 +14,7 @@ function toggleSenhaAdmin(inputId, btn) {
 const ADMIN_ALLOWED_EMAILS = ['admin@parcelyx.com'];
 
 // ── DADOS ────────────────────────────────────────────
-let contas = [
-  // Dados de exemplo caso o Supabase não esteja disponível
-  { id: 1, nome: 'João Silva', email: 'joao@exemplo.com', telefone: '(11) 99999-1111', negocio: 'Loja João', plano: 'Mensal', status: 'Ativo', vencimento: '2025-07-15', criado: '2025-06-01', obs: '' },
-  { id: 2, nome: 'Maria Santos', email: 'maria@exemplo.com', telefone: '(11) 99999-2222', negocio: 'Maria Confeitaria', plano: 'Trial', status: 'Trial', vencimento: '2025-06-26', criado: '2025-06-19', obs: 'Período de teste' },
-];
+let contas = [];
 
 // Função para carregar usuários reais do Supabase
 async function carregarUsuariosReais() {
@@ -27,7 +23,7 @@ async function carregarUsuariosReais() {
     
     // Verifica se o Supabase está disponível
     if (typeof supabase === 'undefined') {
-      console.warn('⚠️ Supabase não disponível, usando dados de exemplo');
+      console.warn('⚠️ Supabase não disponível');
       return contas;
     }
     
@@ -41,7 +37,6 @@ async function carregarUsuariosReais() {
     
     if (error) {
       console.error('❌ Erro ao carregar usuários do Supabase:', error);
-      console.log('ℹ️ Usando dados de exemplo');
       return contas;
     }
     
@@ -62,8 +57,6 @@ async function carregarUsuariosReais() {
         obs: u.plano === 'teste' ? 'Período de teste' : ''
       }));
       console.log('✅ Contas formatadas:', contas.length);
-    } else {
-      console.log('ℹ️ Nenhum usuário na tabela users, usando dados de exemplo');
     }
     
     return contas;

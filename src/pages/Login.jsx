@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Loader2, Check, Mail, Lock, Shield, Headphones } from 'lucide-react'
 import { signIn, signUp } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
+import SplashScreen from '../components/SplashScreen'
 
 const LOGO = (
   <div className="text-center mb-6">
-    <div className="inline-flex items-center justify-center mb-3">
-      <img src="/img/180x120px.png" alt="Parcelyx" style={{height: '100px', width: 'auto'}} />
+    <div className="inline-flex items-center justify-center bg-white rounded-2xl p-4 mb-3">
+      <img src="/img/180x120px.png" alt="Parcelyx" style={{height: '80px', width: 'auto'}} />
     </div>
   </div>
 )
@@ -31,6 +32,7 @@ export default function Login() {
   const [chavePix, setChavePix] = useState('')
   const [showModalPix, setShowModalPix] = useState(false)
   const [lembrar, setLembrar] = useState(false)
+  const [showSplash, setShowSplash] = useState(false)
 
   const navigate = useNavigate()
 
@@ -51,7 +53,8 @@ export default function Login() {
       setLoading(false)
       return
     }
-    navigate('/')
+    setLoading(false)
+    setShowSplash(true)
   }
 
   // Verifica em tempo real se digitou "admin" no campo de email
@@ -130,6 +133,16 @@ export default function Login() {
 
   const inputClass = "w-full px-4 py-3 pl-11 rounded-xl bg-dark-700 border border-dark-500 focus:border-pix-500 focus:ring-2 focus:ring-pix-500/20 outline-none transition-all text-sm text-gray-200 placeholder-gray-500"
   const inputClassNoIcon = "w-full px-4 py-3 rounded-xl bg-dark-700 border border-dark-500 focus:border-pix-500 focus:ring-2 focus:ring-pix-500/20 outline-none transition-all text-sm text-gray-200 placeholder-gray-500"
+
+  // ══════════════════════════════════════════════════════
+  // SPLASH SCREEN APÓS LOGIN
+  // ══════════════════════════════════════════════════════
+  if (showSplash) return (
+    <SplashScreen
+      userName={loginEmail.split('@')[0]}
+      onFinish={() => navigate('/')}
+    />
+  )
 
   // ══════════════════════════════════════════════════════
   // TELA DE LOGIN

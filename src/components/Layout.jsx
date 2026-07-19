@@ -35,11 +35,11 @@ export default function Layout() {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-dark-800 border-r border-dark-500/50">
         <div className="flex items-center h-16 px-6 border-b border-dark-500/50">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5">
             <img 
               src="/img/140x93px.png" 
               alt="Parcelyx" 
-              className="h-16 w-auto object-contain"
+              className="h-10 w-auto object-contain"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = '/img/icon-192.png';
@@ -92,11 +92,11 @@ export default function Layout() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
           <aside className="fixed inset-y-0 left-0 w-72 bg-dark-800 shadow-elevated z-50 animate-slide-in flex flex-col">
             <div className="flex items-center justify-between h-16 px-6 border-b border-dark-500/50">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5">
                 <img 
                   src="/img/140x93px.png" 
                   alt="Parcelyx" 
-                  className="h-16 w-auto object-contain"
+                  className="h-10 w-auto object-contain"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = '/img/icon-192.png';
@@ -160,11 +160,11 @@ export default function Layout() {
             <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-lg hover:bg-dark-600">
               <Menu className="w-5 h-5 text-gray-300" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-white rounded-xl px-2 py-1">
               <img 
                 src="/img/140x93px.png" 
                 alt="Parcelyx" 
-                className="h-14 w-auto object-contain"
+                className="h-9 w-auto object-contain"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = '/img/icon-192.png';

@@ -28,7 +28,7 @@ export default function Dashboard() {
       </div>
 
       {/* Card principal - Capital Exposto / Gradient */}
-      <div className="gradient-card rounded-2xl p-5 relative overflow-hidden">
+      <div className="gradient-card rounded-2xl p-5 relative overflow-hidden cursor-pointer" onClick={() => navigate('/financeiro')}>
         <div className="relative z-10">
           <p className="text-sm text-white/80 mb-1">Capital Exposto</p>
           <p className="text-3xl font-bold text-white">{formatCurrency(stats.totalAtrasado + stats.recebidoMes)}</p>
