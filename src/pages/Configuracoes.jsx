@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { Building, CreditCard, Bell } from 'lucide-react'
+import { Building, CreditCard, Bell, Download, Upload, Database } from 'lucide-react'
 
 export default function Configuracoes() {
-  const { userData, updateUserData } = useApp()
+  const { userData, updateUserData, clientes, parcelamentos, parcelas } = useApp()
+  const fileInputRef = useRef(null)
   const [config, setConfig] = useState({
     nomeEmpresa: 'Meu Negócio',
     telefone: '',
@@ -136,6 +137,62 @@ export default function Configuracoes() {
                   className={inputClass} />
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Importar / Exportar Dados */}
+        <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 bg-primary-500/10 rounded-xl flex items-center justify-center">
+              <Database className="w-4 h-4 text-primary-400" />
+            </div>
+            <h3 className="text-base font-semibold text-white">Dados</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">Exporte seus dados para backup ou importe de um arquivo JSON.</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button onClick={() => {
+              const dados = {
+                exportadoEm: new Date().toISOString(),
+                usuario: userData,
+                clientes: clientes || [],
+                parcelamentos: parcelamentos || [],
+                parcelas: parcelas || [],
+              }
+              const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `parcelyx-backup-${new Date().toISOString().split('T')[0]}.json`
+              a.click()
+              URL.revokeObjectURL(url)
+              setMessage('Dados exportados com sucesso!')
+            }}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-pix-500/10 hover:bg-pix-500/20 text-pix-400 font-semibold rounded-xl transition-all border border-pix-500/20">
+              <Download className="w-4 h-4" /> Exportar dados
+            </button>
+            <button onClick={() => fileInputRef.current?.click()}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 font-semibold rounded-xl transition-all border border-primary-500/20">
+              <Upload className="w-4 h-4" /> Importar dados
+            </button>
+            <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              const reader = new FileReader()
+              reader.onload = (ev) => {
+                try {
+                  const dados = JSON.parse(ev.target.result)
+                  if (dados.clientes || dados.parcelamentos) {
+                    setMessage(`Arquivo carregado: ${dados.clientes?.length || 0} clientes, ${dados.parcelamentos?.length || 0} contratos. (Importação manual pelo Supabase)`)
+                  } else {
+                    setMessage('Arquivo inválido. Use um backup gerado pelo Parcelyx.')
+                  }
+                } catch (err) {
+                  setMessage('Erro ao ler arquivo. Verifique se é um JSON válido.')
+                }
+              }
+              reader.readAsText(file)
+              e.target.value = ''
+            }} />
           </div>
         </div>
 
