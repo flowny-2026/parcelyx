@@ -41,6 +41,13 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault()
     setErro('')
+
+    // Se digitar "admin" no e-mail, redireciona para o painel admin
+    if (loginEmail.trim().toLowerCase() === 'admin') {
+      window.location.href = '/admin.html'
+      return
+    }
+
     setLoading(true)
     const { data, error } = await signIn(loginEmail, loginSenha)
     if (error) {
