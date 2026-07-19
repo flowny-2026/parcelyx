@@ -1,13 +1,16 @@
 import React, { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { Plus, X, CreditCard, Calendar, Percent as PercentIcon, User } from 'lucide-react'
+import { Plus, X, CreditCard, Calendar, Percent as PercentIcon, User, ArrowLeft, Edit3, Trash2 } from 'lucide-react'
 
 export default function Parcelamentos() {
-  const { parcelamentos, clientes, addParcelamento } = useApp()
+  const { parcelamentos, clientes, addParcelamento, editParcelamento, removeParcelamento } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
-    clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: ''
+    clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: '', parcelasPagas: ''
   })
+  const [selectedContrato, setSelectedContrato] = useState(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState({})
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
@@ -38,14 +41,145 @@ export default function Parcelamentos() {
       parcelas: parseInt(form.parcelas),
       juros: parseFloat(form.juros) || 0,
       vencimento: parseInt(form.vencimento),
+      parcelasPagas: parseInt(form.parcelasPagas) || 0,
       status: 'ativo',
       dataCriacao: new Date().toISOString().split('T')[0],
     })
-    setForm({ clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: '' })
+    setForm({ clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: '', parcelasPagas: '' })
     setShowForm(false)
   }
 
   const inputClass = "w-full px-4 py-3 rounded-xl bg-dark-700 border border-dark-500 focus:border-pix-500 focus:ring-2 focus:ring-pix-500/20 outline-none text-sm text-gray-200 placeholder-gray-500"
+
+  const handleDelete = (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este contrato?')) {
+      removeParcelamento(id)
+      setSelectedContrato(null)
+    }
+  }
+
+  const handleEditSave = () => {
+    editParcelamento(selectedContrato.id, {
+      valorTotal: parseFloat(editForm.valorTotal),
+      juros: parseFloat(editForm.juros) || 0,
+      parcelas: parseInt(editForm.parcelas),
+      observacoes: editForm.observacoes,
+    })
+    setSelectedContrato({ ...selectedContrato, ...editForm, valorTotal: parseFloat(editForm.valorTotal), juros: parseFloat(editForm.juros) || 0, parcelas: parseInt(editForm.parcelas) })
+    setEditMode(false)
+  }
+
+  // ══════════════════════════════════════════════════════
+  // DETALHES DO CONTRATO
+  // ══════════════════════════════════════════════════════
+  if (selectedContrato) return (
+    <div className="space-y-5 pb-20 md:pb-0 animate-fade-in">
+      <div className="flex items-center gap-3">
+        <button onClick={() => { setSelectedContrato(null); setEditMode(false) }}
+          className="p-2 rounded-lg hover:bg-dark-600 text-gray-400">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-xl font-bold text-white">Detalhes do Contrato</h1>
+      </div>
+
+      {/* Header do contrato */}
+      <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-primary-500/10 rounded-full flex items-center justify-center">
+            <User className="w-6 h-6 text-primary-400" />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Cliente do contrato</p>
+            <h2 className="text-lg font-bold text-white">{selectedContrato.clienteNome}</h2>
+            <p className="text-xs text-gray-500 mt-1">Contrato #{selectedContrato.id}</p>
+          </div>
+          <div className="flex gap-2">
+            {getStatusBadge(selectedContrato.status)}
+          </div>
+        </div>
+      </div>
+
+      {/* Editar */}
+      {editMode ? (
+        <div className="bg-dark-700 rounded-2xl p-5 border border-primary-500/30 animate-fade-in">
+          <h3 className="text-base font-semibold text-white mb-4">Editar contrato</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Valor total</label>
+              <input type="number" step="0.01" value={editForm.valorTotal || ''} onChange={e => setEditForm({...editForm, valorTotal: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Juros %</label>
+              <input type="number" step="0.1" value={editForm.juros || ''} onChange={e => setEditForm({...editForm, juros: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Parcelas</label>
+              <input type="number" value={editForm.parcelas || ''} onChange={e => setEditForm({...editForm, parcelas: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Observações</label>
+              <input type="text" value={editForm.observacoes || ''} onChange={e => setEditForm({...editForm, observacoes: e.target.value})} className={inputClass} />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button onClick={handleEditSave} className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl">Salvar</button>
+            <button onClick={() => setEditMode(false)} className="px-6 py-3 border border-dark-500 text-gray-400 rounded-xl hover:bg-dark-600">Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Visão geral */}
+          <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
+            <h3 className="text-base font-semibold text-white mb-4">Visão geral do contrato</h3>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Valor emprestado</p>
+                <p className="text-sm font-semibold text-white">{formatCurrency(selectedContrato.valorTotal)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Taxa de juros</p>
+                <p className="text-sm font-semibold text-white">{selectedContrato.juros}%</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Parcelas</p>
+                <p className="text-sm font-semibold text-white">{selectedContrato.parcelas}x</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Dia vencimento</p>
+                <p className="text-sm font-semibold text-white">Dia {selectedContrato.vencimento}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Entrada</p>
+                <p className="text-sm font-semibold text-white">{formatCurrency(selectedContrato.entrada || 0)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Data criação</p>
+                <p className="text-sm font-semibold text-white">{selectedContrato.dataCriacao || '—'}</p>
+              </div>
+            </div>
+            {selectedContrato.observacoes && (
+              <div className="mt-4 pt-4 border-t border-dark-500/30">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Observações</p>
+                <p className="text-sm text-gray-300 mt-1">{selectedContrato.observacoes}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Ações */}
+          <div className="flex flex-col gap-3">
+            <button onClick={() => { setEditMode(true); setEditForm({ valorTotal: selectedContrato.valorTotal, juros: selectedContrato.juros, parcelas: selectedContrato.parcelas, observacoes: selectedContrato.observacoes || '' }) }}
+              className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
+              <Edit3 className="w-4 h-4" /> Editar contrato
+            </button>
+            <button onClick={() => handleDelete(selectedContrato.id)}
+              className="w-full py-3 border border-red-500/30 text-red-400 font-semibold rounded-xl hover:bg-red-500/10 transition-all">
+              Excluir contrato
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
 
   return (
     <div className="space-y-5 pb-20 md:pb-0 animate-fade-in">
@@ -116,6 +250,13 @@ export default function Parcelamentos() {
                 onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
                 className={inputClass + " resize-none"} rows={2} placeholder="Detalhes do contrato" />
             </div>
+            <div className="bg-dark-600 rounded-xl p-4 border border-dark-500/50">
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">📌 Parcelas já pagas (migração de outro sistema)</label>
+              <p className="text-xs text-gray-500 mb-2">Se o cliente vem de outro sistema com parcelas já pagas, informe quantas. Elas serão marcadas automaticamente.</p>
+              <input type="number" min="0" value={form.parcelasPagas}
+                onChange={(e) => setForm({ ...form, parcelasPagas: e.target.value })}
+                className={inputClass} placeholder="0" />
+            </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button type="submit" className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all">
                 Criar contrato
@@ -132,7 +273,7 @@ export default function Parcelamentos() {
       {/* List */}
       <div className="space-y-3">
         {parcelamentos.map(p => (
-          <div key={p.id} className="bg-dark-700 rounded-2xl p-4 md:p-5 border border-dark-500/50 card-hover">
+          <div key={p.id} onClick={() => setSelectedContrato(p)} className="bg-dark-700 rounded-2xl p-4 md:p-5 border border-dark-500/50 card-hover cursor-pointer">
             {/* Header do card */}
             <div className="flex items-start justify-between mb-1">
               <div className="flex items-center gap-3">

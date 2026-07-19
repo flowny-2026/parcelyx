@@ -268,6 +268,7 @@ function generateParcelas(parcelamento) {
   const valorParcela = ((parcelamento.valor_total - parcelamento.entrada) * (1 + parcelamento.juros / 100)) / parcelamento.parcelas
   const today = new Date()
   today.setHours(0, 0, 0, 0) // Normaliza para comparação
+  const parcelasPagas = parcelamento.parcelas_pagas || 0
 
   for (let i = 1; i <= parcelamento.parcelas; i++) {
     // Cria data base a partir da data de criação
@@ -280,18 +281,23 @@ function generateParcelas(parcelamento) {
     d.setMonth(d.getMonth() + i)
     
     // Ajusta caso o dia não exista no mês (ex: 31 em fevereiro)
-    // Se ultrapassou o dia desejado, volta para o último dia do mês anterior
     if (d.getDate() !== parcelamento.vencimento) {
-      d.setDate(0) // Vai para o último dia do mês anterior
+      d.setDate(0)
     }
     
     // Normaliza para comparação
     const dNormalized = new Date(d)
     dNormalized.setHours(0, 0, 0, 0)
     
-    // Define status baseado na data
+    // Define status baseado na data ou se é parcela já paga (migração)
     let status = 'pendente'
-    if (dNormalized < today) {
+    let dataPagamento = null
+
+    if (i <= parcelasPagas) {
+      // Parcela já paga (migração de outro sistema)
+      status = 'pago'
+      dataPagamento = d.toISOString().split('T')[0]
+    } else if (dNormalized < today) {
       status = 'atrasado'
     } else if (dNormalized.getTime() === today.getTime()) {
       status = 'vence_hoje'
@@ -306,7 +312,7 @@ function generateParcelas(parcelamento) {
       valor: Math.round(valorParcela * 100) / 100,
       vencimento: d.toISOString().split('T')[0],
       status: status,
-      data_pagamento: null
+      data_pagamento: dataPagamento
     })
   }
 

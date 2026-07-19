@@ -1,18 +1,21 @@
 import React, { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { Plus, Search, Phone, User, X, ChevronRight } from 'lucide-react'
+import { Plus, Search, Phone, User, X, ChevronRight, Edit3, Trash2, MessageSquare, ArrowLeft } from 'lucide-react'
 
 export default function Clientes() {
-  const { clientes, addCliente } = useApp()
+  const { clientes, addCliente, editCliente, removeCliente } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [filtro, setFiltro] = useState('todos')
   const [form, setForm] = useState({ nome: '', telefone: '', cpf: '', endereco: '', observacoes: '' })
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState({})
 
   const filtered = clientes.filter(c =>
     c.nome.toLowerCase().includes(search.toLowerCase()) ||
     c.telefone.includes(search) ||
-    c.cpf.includes(search)
+    (c.cpf && c.cpf.includes(search))
   )
 
   const handleSubmit = (e) => {
@@ -22,8 +25,135 @@ export default function Clientes() {
     setShowForm(false)
   }
 
+  const handleDelete = (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
+      removeCliente(id)
+      setSelectedClient(null)
+    }
+  }
+
+  const handleEdit = () => {
+    editCliente(selectedClient.id, editForm)
+    setSelectedClient({ ...selectedClient, ...editForm })
+    setEditMode(false)
+  }
+
   const inputClass = "w-full px-4 py-3 rounded-xl bg-dark-700 border border-dark-500 focus:border-pix-500 focus:ring-2 focus:ring-pix-500/20 outline-none text-sm text-gray-200 placeholder-gray-500"
 
+  // ══════════════════════════════════════════════════════
+  // TELA DE DETALHES DO CLIENTE
+  // ══════════════════════════════════════════════════════
+  if (selectedClient) return (
+    <div className="space-y-5 pb-20 md:pb-0 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button onClick={() => { setSelectedClient(null); setEditMode(false) }}
+          className="p-2 rounded-lg hover:bg-dark-600 text-gray-400">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-xl font-bold text-white">Cliente</h1>
+      </div>
+
+      {/* Card info do cliente */}
+      <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-primary-500/10 rounded-full flex items-center justify-center">
+            <User className="w-6 h-6 text-primary-400" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-white">{selectedClient.nome}</h2>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-pix-500/10 text-pix-400 border border-pix-500/20 mt-1">
+              ● Bom pagador
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => { setEditMode(true); setEditForm({ nome: selectedClient.nome, telefone: selectedClient.telefone, cpf: selectedClient.cpf || '', endereco: selectedClient.endereco || '', observacoes: selectedClient.observacoes || '' }) }}
+              className="p-2 rounded-lg bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20">
+              <Edit3 className="w-4 h-4" />
+            </button>
+            <button onClick={() => handleDelete(selectedClient.id)}
+              className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Editar cliente */}
+      {editMode && (
+        <div className="bg-dark-700 rounded-2xl p-5 border border-primary-500/30 animate-fade-in">
+          <h3 className="text-base font-semibold text-white mb-4">Editar cliente</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Nome</label>
+              <input type="text" value={editForm.nome || ''} onChange={e => setEditForm({...editForm, nome: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Telefone</label>
+              <input type="tel" value={editForm.telefone || ''} onChange={e => setEditForm({...editForm, telefone: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">CPF</label>
+              <input type="text" value={editForm.cpf || ''} onChange={e => setEditForm({...editForm, cpf: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Endereço</label>
+              <input type="text" value={editForm.endereco || ''} onChange={e => setEditForm({...editForm, endereco: e.target.value})} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Observações</label>
+              <textarea value={editForm.observacoes || ''} onChange={e => setEditForm({...editForm, observacoes: e.target.value})} className={inputClass + " resize-none"} rows={2} />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={handleEdit} className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl">Salvar</button>
+              <button onClick={() => setEditMode(false)} className="px-6 py-3 border border-dark-500 text-gray-400 rounded-xl hover:bg-dark-600">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Informações */}
+      {!editMode && (
+        <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50 space-y-4">
+          <h3 className="text-base font-semibold text-white">Informações</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Telefone</span>
+              <span className="text-sm text-gray-200">{selectedClient.telefone || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">CPF</span>
+              <span className="text-sm text-gray-200">{selectedClient.cpf || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Endereço</span>
+              <span className="text-sm text-gray-200">{selectedClient.endereco || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Observações</span>
+              <span className="text-sm text-gray-200">{selectedClient.observacoes || '—'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ações */}
+      <div className="flex flex-col gap-3">
+        <a href={`https://wa.me/55${(selectedClient.telefone || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
+          className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all">
+          <MessageSquare className="w-4 h-4" /> Enviar WhatsApp
+        </a>
+        <button onClick={() => handleDelete(selectedClient.id)}
+          className="w-full py-3 border border-red-500/30 text-red-400 font-semibold rounded-xl hover:bg-red-500/10 transition-all">
+          Excluir cliente
+        </button>
+      </div>
+    </div>
+  )
+
+  // ══════════════════════════════════════════════════════
+  // LISTA DE CLIENTES
+  // ══════════════════════════════════════════════════════
   return (
     <div className="space-y-5 pb-20 md:pb-0 animate-fade-in">
       {/* Header */}
@@ -131,7 +261,8 @@ export default function Clientes() {
           <p className="text-sm text-gray-500 text-center py-8">Nenhum cliente encontrado</p>
         )}
         {filtered.map(cliente => (
-          <div key={cliente.id} className="bg-dark-700 rounded-xl p-4 border border-dark-500/50 card-hover">
+          <div key={cliente.id} onClick={() => setSelectedClient(cliente)}
+            className="bg-dark-700 rounded-xl p-4 border border-dark-500/50 card-hover cursor-pointer">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-pix-500/10 rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="w-5 h-5 text-pix-400" />

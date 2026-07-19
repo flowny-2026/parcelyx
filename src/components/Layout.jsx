@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Outlet, NavLink, useLocation, Navigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, CreditCard, Receipt,
-  MessageSquare, PieChart, Settings, Menu, X, LogOut, DollarSign, Bell, Eye
+  MessageSquare, PieChart, Settings, Menu, X, LogOut, Bell
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
@@ -13,7 +13,6 @@ const navItems = [
   { path: '/parcelas', icon: Receipt, label: 'Parcelas' },
   { path: '/cobrancas', icon: MessageSquare, label: 'Cobranças' },
   { path: '/financeiro', icon: PieChart, label: 'Financeiro' },
-  { path: '/pagamentos', icon: DollarSign, label: 'Pagamentos' },
   { path: '/configuracoes', icon: Settings, label: 'Configurações' },
 ]
 
