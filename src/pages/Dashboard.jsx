@@ -1,9 +1,11 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { TrendingUp, AlertTriangle, Clock, Percent, ArrowUpRight, ArrowDownRight, Users, CreditCard, DollarSign, Headphones, ChevronRight } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const { getStats, getRecebimentosRecentes, getChartData, userData } = useApp()
   const stats = getStats()
   const recentes = getRecebimentosRecentes()
@@ -80,17 +82,21 @@ export default function Dashboard() {
         <h3 className="text-base font-semibold text-white mb-3">Ações Rápidas</h3>
         <div className="grid grid-cols-4 gap-3">
           {[
-            { icon: CreditCard, label: 'Contratos', color: 'text-pix-400' },
-            { icon: DollarSign, label: 'Receber', color: 'text-pix-400' },
-            { icon: Users, label: 'Clientes', color: 'text-pix-400' },
-            { icon: Headphones, label: 'Suporte', color: 'text-pix-400' },
+            { icon: CreditCard, label: 'Contratos', color: 'text-pix-400', path: '/parcelamentos' },
+            { icon: DollarSign, label: 'Receber', color: 'text-pix-400', path: '/parcelas' },
+            { icon: Users, label: 'Clientes', color: 'text-pix-400', path: '/clientes' },
+            { icon: Headphones, label: 'Suporte', color: 'text-pix-400', path: 'https://wa.me/5516992383821?text=Olá!%20Preciso%20de%20suporte%20no%20Parcelyx.' },
           ].map((action, i) => (
-            <div key={i} className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 bg-dark-700 border border-dark-500/50 rounded-xl flex items-center justify-center">
+            <a key={i} href={action.path.startsWith('http') ? action.path : undefined}
+              target={action.path.startsWith('http') ? '_blank' : undefined}
+              rel={action.path.startsWith('http') ? 'noreferrer' : undefined}
+              onClick={(e) => { if (!action.path.startsWith('http')) { e.preventDefault(); navigate(action.path) } }}
+              className="flex flex-col items-center gap-2 cursor-pointer">
+              <div className="w-14 h-14 bg-dark-700 border border-dark-500/50 rounded-xl flex items-center justify-center hover:border-pix-500/30 transition-colors">
                 <action.icon className={`w-5 h-5 ${action.color}`} />
               </div>
               <span className="text-xs text-gray-400">{action.label}</span>
-            </div>
+            </a>
           ))}
         </div>
       </div>

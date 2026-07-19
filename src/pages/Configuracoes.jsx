@@ -143,11 +143,15 @@ export default function Configuracoes() {
         <button onClick={async () => {
             setSaving(true); setMessage('')
             const result = await updateUserData({
-              negocio: config.nomeEmpresa, telefone: config.telefone, email: config.email,
+              negocio: config.nomeEmpresa, telefone: config.telefone,
               chave_pix: config.chavePix, tipo_chave_pix: config.tipoChavePix,
             })
             setSaving(false)
-            setMessage(result.success ? 'Configurações salvas com sucesso.' : 'Falha ao salvar.')
+            if (result && !result.error) {
+              setMessage('Configurações salvas com sucesso.')
+            } else {
+              setMessage('Falha ao salvar. Verifique sua conexão.')
+            }
           }} disabled={saving}
           className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-all">
           {saving ? 'Salvando...' : 'Salvar configurações'}
