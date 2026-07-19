@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import { MessageSquare, Send, RefreshCw, CheckCircle, Copy, QrCode } from 'lucide-react'
 
 export default function Cobrancas() {
-  const { parcelas, clientes } = useApp()
+  const { parcelas, clientes, userData } = useApp()
   const [selectedParcela, setSelectedParcela] = useState(null)
   const [showPix, setShowPix] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -14,8 +14,11 @@ export default function Cobrancas() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
   }
 
+  // Pega a chave PIX salva nas configurações do usuário
+  const pixKey = userData?.chavePix || userData?.chave_pix || ''
+
   const gerarMensagemCobranca = (parcela) => {
-    return `Olá ${parcela.clienteNome}! 👋\n\nEste é um lembrete sobre sua parcela ${parcela.numero}/${parcela.totalParcelas} no valor de ${formatCurrency(parcela.valor)}, com vencimento em ${new Date(parcela.vencimento).toLocaleDateString('pt-BR')}.\n\nPara facilitar, segue a chave PIX para pagamento:\n📱 PIX: pagamentos@parcelyx.com\n\nQualquer dúvida, estou à disposição! 😊`
+    return `Olá ${parcela.clienteNome}! 👋\n\nEste é um lembrete sobre sua parcela ${parcela.numero}/${parcela.totalParcelas} no valor de ${formatCurrency(parcela.valor)}, com vencimento em ${new Date(parcela.vencimento).toLocaleDateString('pt-BR')}.\n\nPara facilitar, segue a chave PIX para pagamento:\n📱 PIX: ${pixKey || 'Não configurada'}\n\nQualquer dúvida, estou à disposição! 😊`
   }
 
   const gerarMensagemLembrete = (parcela) => {
@@ -39,10 +42,8 @@ export default function Cobrancas() {
     }
   }
 
-  const pixCode = '00020126580014br.gov.bcb.pix0136pagamentos@parcelyx.com5204000053039865802BR5913PARCELYX LTDA6008SAOPAULO62070503***6304'
-
   const copyPix = () => {
-    navigator.clipboard.writeText(pixCode)
+    navigator.clipboard.writeText(pixKey)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -134,8 +135,8 @@ export default function Cobrancas() {
             </div>
 
             <div className="bg-dark-700 rounded-xl p-3 mb-4 border border-dark-500/50">
-              <p className="text-xs text-gray-500 mb-1">Código PIX:</p>
-              <p className="text-xs text-gray-300 font-mono break-all">{pixCode.slice(0, 60)}...</p>
+              <p className="text-xs text-gray-500 mb-1">Chave PIX:</p>
+              <p className="text-xs text-gray-300 font-mono break-all">{pixKey || 'Nenhuma chave configurada. Vá em Configurações para adicionar.'}</p>
             </div>
 
             <button onClick={copyPix}
