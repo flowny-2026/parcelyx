@@ -43,7 +43,7 @@ export default function Login() {
     setErro('')
 
     // Se digitar "admin" no e-mail, redireciona para o painel admin
-    if (loginEmail.trim().toLowerCase() === 'admin') {
+    if (loginEmail.trim().toLowerCase() === 'admin' || loginEmail.trim().toLowerCase() === 'admin@parcelyx.com') {
       window.location.href = '/admin.html'
       return
     }
@@ -56,6 +56,15 @@ export default function Login() {
       return
     }
     navigate('/')
+  }
+
+  // Verifica em tempo real se digitou "admin" no campo de email
+  const handleEmailChange = (e) => {
+    const val = e.target.value
+    setLoginEmail(val)
+    if (val.trim().toLowerCase() === 'admin') {
+      window.location.href = '/admin.html'
+    }
   }
 
   const handleStep1 = (e) => {
@@ -177,7 +186,7 @@ export default function Login() {
             <label className="block text-sm font-medium text-gray-300 mb-1.5">E-mail</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+              <input type="text" value={loginEmail} onChange={handleEmailChange}
                 placeholder="Digite seu e-mail" required className={inputClass} />
             </div>
           </div>
