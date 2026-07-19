@@ -115,8 +115,8 @@ export default function Configuracoes() {
                 <p className="text-xs text-gray-500">Receba alertas de pagamentos</p>
               </div>
               <button onClick={() => setConfig({ ...config, notificacoes: !config.notificacoes })}
-                className={`w-11 h-6 rounded-full transition-colors relative ${config.notificacoes ? 'bg-primary-600' : 'bg-dark-500'}`}>
-                <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform ${config.notificacoes ? 'right-0.5' : 'left-0.5'}`} />
+                className={`w-12 h-7 rounded-full transition-colors relative flex-shrink-0 p-1 flex ${config.notificacoes ? 'bg-primary-600 justify-end' : 'bg-dark-500 justify-start'}`}>
+                <div className="w-5 h-5 bg-white rounded-full shadow-md" />
               </button>
             </div>
             <div className="flex items-center justify-between">
@@ -125,8 +125,8 @@ export default function Configuracoes() {
                 <p className="text-xs text-gray-500">Lembrar clientes antes do vencimento</p>
               </div>
               <button onClick={() => setConfig({ ...config, lembreteAutomatico: !config.lembreteAutomatico })}
-                className={`w-11 h-6 rounded-full transition-colors relative ${config.lembreteAutomatico ? 'bg-primary-600' : 'bg-dark-500'}`}>
-                <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform ${config.lembreteAutomatico ? 'right-0.5' : 'left-0.5'}`} />
+                className={`w-12 h-7 rounded-full transition-colors relative flex-shrink-0 p-1 flex ${config.lembreteAutomatico ? 'bg-primary-600 justify-end' : 'bg-dark-500 justify-start'}`}>
+                <div className="w-5 h-5 bg-white rounded-full shadow-md" />
               </button>
             </div>
             {config.lembreteAutomatico && (
@@ -148,52 +148,99 @@ export default function Configuracoes() {
             </div>
             <h3 className="text-base font-semibold text-white">Dados</h3>
           </div>
-          <p className="text-xs text-gray-500 mb-4">Exporte seus dados para backup ou importe de um arquivo JSON.</p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button onClick={() => {
-              const dados = {
-                exportadoEm: new Date().toISOString(),
-                usuario: userData,
-                clientes: clientes || [],
-                parcelamentos: parcelamentos || [],
-                parcelas: parcelas || [],
-              }
-              const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = `parcelyx-backup-${new Date().toISOString().split('T')[0]}.json`
-              a.click()
-              URL.revokeObjectURL(url)
-              setMessage('Dados exportados com sucesso!')
-            }}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-pix-500/10 hover:bg-pix-500/20 text-pix-400 font-semibold rounded-xl transition-all border border-pix-500/20">
-              <Download className="w-4 h-4" /> Exportar dados
-            </button>
+          <p className="text-xs text-gray-500 mb-4">Exporte seus dados para backup ou importe de um arquivo.</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <button onClick={() => {
+                const dados = {
+                  exportadoEm: new Date().toISOString(),
+                  usuario: userData,
+                  clientes: clientes || [],
+                  parcelamentos: parcelamentos || [],
+                  parcelas: parcelas || [],
+                }
+                const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `parcelyx-backup-${new Date().toISOString().split('T')[0]}.json`
+                a.click()
+                URL.revokeObjectURL(url)
+                setMessage('✅ Dados exportados em JSON!')
+              }}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-pix-500/10 hover:bg-pix-500/20 text-pix-400 font-semibold rounded-xl transition-all border border-pix-500/20 text-sm">
+                <Download className="w-4 h-4" /> JSON
+              </button>
+              <button onClick={() => {
+                if (!clientes || clientes.length === 0) { setMessage('⚠️ Nenhum dado para exportar.'); return }
+                const headers = ['Nome', 'Telefone', 'CPF', 'Endereço', 'Observações']
+                const rows = clientes.map(c => [c.nome, c.telefone, c.cpf || '', c.endereco || '', c.observacoes || ''].map(v => `"${v}"`).join(','))
+                const csv = [headers.join(','), ...rows].join('\n')
+                const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `parcelyx-clientes-${new Date().toISOString().split('T')[0]}.csv`
+                a.click()
+                URL.revokeObjectURL(url)
+                setMessage('✅ Clientes exportados em CSV!')
+              }}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-pix-500/10 hover:bg-pix-500/20 text-pix-400 font-semibold rounded-xl transition-all border border-pix-500/20 text-sm">
+                <Download className="w-4 h-4" /> CSV
+              </button>
+            </div>
             <button onClick={() => fileInputRef.current?.click()}
               className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 font-semibold rounded-xl transition-all border border-primary-500/20">
               <Upload className="w-4 h-4" /> Importar dados
             </button>
-            <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={(e) => {
+            <input ref={fileInputRef} type="file" accept=".json,.csv,.xls,.xlsx,.txt" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0]
               if (!file) return
-              const reader = new FileReader()
-              reader.onload = (ev) => {
-                try {
-                  const dados = JSON.parse(ev.target.result)
-                  if (dados.clientes || dados.parcelamentos) {
-                    setMessage(`Arquivo carregado: ${dados.clientes?.length || 0} clientes, ${dados.parcelamentos?.length || 0} contratos. (Importação manual pelo Supabase)`)
-                  } else {
-                    setMessage('Arquivo inválido. Use um backup gerado pelo Parcelyx.')
+              const ext = file.name.split('.').pop().toLowerCase()
+
+              if (ext === 'json') {
+                const reader = new FileReader()
+                reader.onload = (ev) => {
+                  try {
+                    const dados = JSON.parse(ev.target.result)
+                    if (dados.clientes || dados.parcelamentos) {
+                      setMessage(`✅ JSON carregado: ${dados.clientes?.length || 0} clientes, ${dados.parcelamentos?.length || 0} contratos.`)
+                    } else {
+                      setMessage('⚠️ JSON inválido. Use um backup gerado pelo Parcelyx.')
+                    }
+                  } catch (err) {
+                    setMessage('❌ Erro ao ler JSON. Verifique o formato.')
                   }
-                } catch (err) {
-                  setMessage('Erro ao ler arquivo. Verifique se é um JSON válido.')
                 }
+                reader.readAsText(file)
+              } else if (ext === 'csv' || ext === 'txt') {
+                const reader = new FileReader()
+                reader.onload = (ev) => {
+                  try {
+                    const text = ev.target.result
+                    const lines = text.split('\n').filter(l => l.trim())
+                    const headers = lines[0].split(/[,;\t]/).map(h => h.trim().toLowerCase())
+                    const rows = lines.slice(1).map(line => {
+                      const values = line.split(/[,;\t]/)
+                      const obj = {}
+                      headers.forEach((h, i) => { obj[h] = values[i]?.trim() || '' })
+                      return obj
+                    })
+                    setMessage(`✅ CSV carregado: ${rows.length} registros encontrados. Colunas: ${headers.join(', ')}`)
+                  } catch (err) {
+                    setMessage('❌ Erro ao ler CSV.')
+                  }
+                }
+                reader.readAsText(file)
+              } else if (ext === 'xls' || ext === 'xlsx') {
+                setMessage('📊 Arquivo Excel detectado. Para importar planilhas, exporte como CSV primeiro (Salvar como → CSV) e importe novamente.')
+              } else {
+                setMessage('⚠️ Formato não suportado. Use JSON, CSV ou TXT.')
               }
-              reader.readAsText(file)
               e.target.value = ''
             }} />
           </div>
+          <p className="text-xs text-gray-600 mt-3">Formatos aceitos: JSON, CSV, TXT, XLS, XLSX</p>
         </div>
 
         {/* Save button */}

@@ -208,9 +208,9 @@ export default function Parcelas() {
 
       {/* Modal confirmar pagamento */}
       {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null) }}>
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative bg-dark-800 w-full md:max-w-md md:rounded-2xl rounded-t-2xl border-t md:border border-dark-500/50 animate-slide-up p-5 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4" onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null) }}>
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+          <div className="relative bg-dark-800 w-full max-w-sm rounded-2xl border border-dark-500/50 animate-fade-in p-5 max-h-[70vh] overflow-y-auto shadow-elevated" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Confirmar pagamento</h3>
               <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null) }}

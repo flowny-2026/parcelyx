@@ -122,9 +122,9 @@ export default function Cobrancas() {
 
       {/* PIX Modal */}
       {showPix && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPix(false)} />
-          <div className="relative bg-dark-800 rounded-2xl w-full max-w-md border border-dark-500/50 animate-fade-in p-6">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowPix(false)} />
+          <div className="relative bg-dark-800 rounded-2xl w-full max-w-sm border border-dark-500/50 animate-fade-in p-5 max-h-[70vh] overflow-y-auto shadow-elevated">
             <h2 className="text-lg font-semibold text-white mb-4 text-center">PIX Copia e Cola</h2>
 
             <div className="w-48 h-48 mx-auto bg-dark-700 rounded-2xl flex items-center justify-center mb-4 border border-dark-500/50">

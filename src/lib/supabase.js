@@ -160,8 +160,14 @@ export async function createParcelamento(parcelamento) {
   try {
     const user = await getCurrentUser()
     
+    // Guarda parcelas_pagas antes de converter (não vai pro banco de parcelamentos)
+    const parcelasPagas = parcelamento.parcelasPagas || 0
+    
+    // Remove campos que não existem na tabela parcelamentos
+    const { parcelasPagas: _, ...parcelamentoLimpo } = parcelamento
+    
     // Converte camelCase do React para snake_case do Supabase
-    const parcelamentoSnake = mapKeys(parcelamento, toSnake)
+    const parcelamentoSnake = mapKeys(parcelamentoLimpo, toSnake)
     
     // Criar parcelamento
     const { data: parcData, error: parcError } = await supabase
@@ -172,8 +178,8 @@ export async function createParcelamento(parcelamento) {
 
     if (parcError) throw parcError
 
-    // Gera parcelas - usa o objeto retornado (snake_case) + os dados do form
-    const dadosCompletos = { ...parcData, ...parcelamentoSnake }
+    // Gera parcelas - usa o objeto retornado (snake_case) + parcelas_pagas
+    const dadosCompletos = { ...parcData, ...parcelamentoSnake, parcelas_pagas: parcelasPagas }
     const parcelas = generateParcelas(dadosCompletos)
     const { error: parcelasError } = await supabase
       .from('parcelas')
