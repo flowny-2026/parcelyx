@@ -64,7 +64,9 @@
   <!-- SIDEBAR -->
   <aside class="admin-sidebar">
     <div class="admin-sidebar-logo">
-      <img src="img/140x93px.png" alt="Parcelyx" style="height:44px;width:auto;object-fit:contain">
+      <div style="background:#fff;border-radius:10px;padding:6px 12px;display:inline-flex;align-items:center">
+        <img src="img/140x93px.png" alt="Parcelyx" style="height:32px;width:auto;object-fit:contain">
+      </div>
       <span class="admin-tag">ADMIN</span>
     </div>
     <nav class="admin-nav">
@@ -265,19 +267,22 @@
         <div class="form-group"><label>E-mail *</label><input type="email" id="nc-email" placeholder="email@exemplo.com"></div>
       </div>
       <div class="form-row">
+        <div class="form-group"><label>Senha *</label><input type="password" id="nc-senha" placeholder="Mínimo 6 caracteres"></div>
         <div class="form-group"><label>Telefone</label><input type="tel" id="nc-tel" placeholder="(11) 99999-9999"></div>
-        <div class="form-group"><label>Nome do negócio</label><input type="text" id="nc-negocio" placeholder="Nome da empresa"></div>
       </div>
       <div class="form-row">
+        <div class="form-group"><label>Nome do negócio</label><input type="text" id="nc-negocio" placeholder="Nome da empresa"></div>
         <div class="form-group"><label>Plano *</label>
           <select id="nc-plano">
             <option value="Trial">Trial (7 dias grátis)</option>
             <option value="Mensal">Mensal – R$ 29/mês</option>
           </select>
         </div>
-        <div class="form-group"><label>Vencimento</label><input type="date" id="nc-venc"></div>
       </div>
-      <div class="form-group"><label>Observações</label><textarea id="nc-obs" rows="2" placeholder="Notas internas"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Vencimento</label><input type="date" id="nc-venc"></div>
+        <div class="form-group"><label>Observações</label><textarea id="nc-obs" rows="2" placeholder="Notas internas"></textarea></div>
+      </div>
       <button class="btn-primary-sm btn-full mt-2" onclick="criarConta()">Criar conta</button>
     </div>
   </div>

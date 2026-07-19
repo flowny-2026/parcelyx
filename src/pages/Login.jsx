@@ -33,6 +33,7 @@ export default function Login() {
   const [showModalPix, setShowModalPix] = useState(false)
   const [lembrar, setLembrar] = useState(false)
   const [showSplash, setShowSplash] = useState(false)
+  const [splashName, setSplashName] = useState('')
 
   const navigate = useNavigate()
 
@@ -52,6 +53,13 @@ export default function Login() {
       setErro('E-mail ou senha incorretos.')
       setLoading(false)
       return
+    }
+    // Busca nome do usuário
+    try {
+      const { data: userData } = await supabase.from('users').select('nome, negocio').eq('email', loginEmail).single()
+      setSplashName(userData?.nome || userData?.negocio || loginEmail.split('@')[0])
+    } catch (e) {
+      setSplashName(loginEmail.split('@')[0])
     }
     setLoading(false)
     setShowSplash(true)
@@ -139,7 +147,7 @@ export default function Login() {
   // ══════════════════════════════════════════════════════
   if (showSplash) return (
     <SplashScreen
-      userName={loginEmail.split('@')[0]}
+      userName={splashName}
       onFinish={() => navigate('/')}
     />
   )

@@ -80,23 +80,9 @@ const planos = [
   { nome:'Mensal', preco:29, cor:'#0729F5', destaque:true, features:['Clientes ilimitados','Parcelas ilimitadas','WhatsApp integrado','PIX copia e cola','Cobranças automáticas','Suporte por WhatsApp'], usuarios: 0 },
 ];
 
-const pagamentos = [
-  { usuario:'João Silva', plano:'Mensal', valor:29, data:'2025-05-01', status:'Pago' },
-  { usuario:'Carlos Ferreira', plano:'Mensal', valor:29, data:'2025-05-01', status:'Pago' },
-  { usuario:'Pedro Costa', plano:'Mensal', valor:29, data:'2025-05-01', status:'Pago' },
-  { usuario:'Lucia Mendes', plano:'Mensal', valor:29, data:'2025-05-01', status:'Pago' },
-  { usuario:'Ana Oliveira', plano:'Mensal', valor:29, data:'2025-04-30', status:'Atrasado' },
-  { usuario:'João Silva', plano:'Mensal', valor:29, data:'2025-04-01', status:'Pago' },
-  { usuario:'Carlos Ferreira', plano:'Mensal', valor:29, data:'2025-04-01', status:'Pago' },
-  { usuario:'Roberto Lima', plano:'Mensal', valor:29, data:'2025-03-01', status:'Estornado' },
-];
+const pagamentos = [];
 
-const tickets = [
-  { usuario:'Ana Oliveira', assunto:'Não consigo gerar PIX', status:'Aberto', data:'2025-05-08', prioridade:'Alta' },
-  { usuario:'Maria Santos', assunto:'Como cadastrar cliente?', status:'Respondido', data:'2025-05-07', prioridade:'Baixa' },
-  { usuario:'Roberto Lima', assunto:'Quero cancelar minha conta', status:'Fechado', data:'2025-05-01', prioridade:'Média' },
-  { usuario:'Fernanda Rocha', assunto:'Erro ao marcar parcela como paga', status:'Aberto', data:'2025-05-09', prioridade:'Alta' },
-];
+const tickets = [];
 
 // ── UTILS ─────────────────────────────────────────────
 const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
@@ -368,45 +354,70 @@ function salvarEdicaoConta(id) {
 async function criarConta() {
   const nome = document.getElementById('nc-nome').value.trim();
   const email = document.getElementById('nc-email').value.trim();
+  const senha = document.getElementById('nc-senha') ? document.getElementById('nc-senha').value.trim() : '';
   if (!nome || !email) { showAdmToast('Preencha nome e e-mail'); return; }
+  if (!senha || senha.length < 6) { showAdmToast('Senha deve ter pelo menos 6 caracteres'); return; }
   
   const plano = document.getElementById('nc-plano').value;
   const status = plano === 'Trial' ? 'Trial' : 'Ativo';
   const vencimento = document.getElementById('nc-venc').value || new Date(Date.now()+30*86400000).toISOString().split('T')[0];
   const hoje = new Date().toISOString().split('T')[0];
+  const negocio = document.getElementById('nc-negocio').value || nome;
+  const telefone = document.getElementById('nc-tel').value || '';
 
-  // Tenta salvar no Supabase
+  // Cria usuário no Supabase Auth + tabela users
   try {
     if (typeof supabase !== 'undefined') {
-      const { error } = await supabase.from('users').insert([{
-        nome: nome,
+      // 1. Criar no Auth via signUp
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email,
-        negocio: document.getElementById('nc-negocio').value || nome,
-        telefone: document.getElementById('nc-tel').value || null,
-        plano: plano === 'Trial' ? 'teste' : 'mensal',
-        data_expiracao: vencimento,
-        created_at: hoje,
-        saldo_caixa: 0
-      }]);
-      if (error) console.warn('Erro ao salvar no Supabase:', error);
+        password: senha,
+        options: {
+          data: { nome: nome, negocio: negocio, telefone: telefone }
+        }
+      });
+      
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          showAdmToast('❌ Este e-mail já está cadastrado');
+        } else {
+          showAdmToast('❌ Erro: ' + authError.message);
+        }
+        return;
+      }
+
+      // 2. Inserir/atualizar na tabela users
+      if (authData?.user?.id) {
+        const { error: dbError } = await supabase.from('users').upsert({
+          id: authData.user.id,
+          nome: nome,
+          email: email,
+          negocio: negocio,
+          telefone: telefone,
+          plano: plano === 'Trial' ? 'teste' : 'mensal',
+          data_expiracao: vencimento,
+          saldo_caixa: 0
+        });
+        if (dbError) console.warn('Erro ao salvar na tabela users:', dbError);
+      }
+
+      // 3. Refaz login como admin (signUp desloga)
+      const admEmail = 'admin@parcelyx.com';
+      const admSenhaEl = document.getElementById('adm-senha');
+      // Relogar como admin
+      await supabase.auth.signInWithPassword({ email: admEmail, password: 'Admin@2026' });
     }
   } catch (e) {
-    console.warn('Supabase não disponível, salvando localmente:', e);
+    console.error('Erro ao criar conta:', e);
+    showAdmToast('❌ Erro ao criar conta');
+    return;
   }
 
-  contas.push({
-    id: contas.length+1,
-    nome, email,
-    telefone: document.getElementById('nc-tel').value,
-    negocio: document.getElementById('nc-negocio').value || nome,
-    plano: plano,
-    status: status,
-    vencimento: vencimento,
-    criado: hoje,
-    obs: document.getElementById('nc-obs').value,
-  });
+  // Recarrega lista do banco
+  await carregarUsuariosReais();
   closeAdmModal('modal-nova-conta');
   ['nc-nome','nc-email','nc-tel','nc-negocio','nc-obs'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  if (document.getElementById('nc-senha')) document.getElementById('nc-senha').value = '';
   renderContas();
   renderAdmDashboard();
   showAdmToast('Conta criada com sucesso! ✅');
@@ -506,6 +517,10 @@ function fecharTicket(btn, assunto) {
 }
 
 // ── MODALS ────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
 function closeAdmModal(id, e) {
   if (e && e.target.id !== id) return;
   document.getElementById(id).classList.remove('open');
