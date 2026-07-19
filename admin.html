@@ -67,7 +67,9 @@
       <div style="background:#fff;border-radius:10px;padding:6px 12px;display:inline-flex;align-items:center">
         <img src="img/140x93px.png" alt="Parcelyx" style="height:32px;width:auto;object-fit:contain">
       </div>
-      <span class="admin-tag">ADMIN</span>
+      <button onclick="document.querySelector('.admin-sidebar').classList.remove('open');document.querySelector('.admin-overlay').classList.remove('open')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:6px;border-radius:8px;display:none" class="admin-sidebar-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
     <nav class="admin-nav">
       <a href="#" class="admin-nav-item active" onclick="adminNav('dashboard',this)">
@@ -108,6 +110,18 @@
       </button>
     </div>
   </aside>
+
+  <!-- MOBILE HEADER -->
+  <div class="admin-mobile-header">
+    <button onclick="document.querySelector('.admin-sidebar').classList.add('open');document.querySelector('.admin-overlay').classList.add('open')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div style="background:#fff;border-radius:8px;padding:4px 10px;display:inline-flex;align-items:center">
+      <img src="img/140x93px.png" alt="Parcelyx" style="height:28px;width:auto;object-fit:contain">
+    </div>
+    <span class="admin-tag">ADMIN</span>
+  </div>
+  <div class="admin-overlay" onclick="document.querySelector('.admin-sidebar').classList.remove('open');this.classList.remove('open')"></div>
 
   <!-- MAIN -->
   <main class="admin-main">

@@ -164,6 +164,10 @@ function adminNav(page, el) {
   if (el) el.classList.add('active');
   else document.querySelectorAll(`.admin-nav-item[onclick*="'${page}'"]`).forEach(n => n.classList.add('active'));
 
+  // Fecha sidebar no mobile
+  document.querySelector('.admin-sidebar')?.classList.remove('open');
+  document.querySelector('.admin-overlay')?.classList.remove('open');
+
   const titles = {
     dashboard: { h:'Dashboard', p:'Visão geral da plataforma' },
     contas: { h:'Contas', p:'Gerencie todos os usuários' },

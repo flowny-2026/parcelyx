@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Outlet, NavLink, useLocation, Navigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, CreditCard, Receipt,
-  MessageSquare, PieChart, Settings, Menu, X, LogOut, Bell
+  MessageSquare, PieChart, Settings, Menu, X, LogOut, Bell, AlertTriangle, Clock
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
@@ -18,8 +18,9 @@ const navItems = [
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showAlerts, setShowAlerts] = useState(false)
   const location = useLocation()
-  const { isAuthenticated, logout, userData } = useApp()
+  const { isAuthenticated, logout, userData, parcelas } = useApp()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -28,6 +29,12 @@ export default function Layout() {
   const nomeExibido = userData?.negocio || userData?.nome || 'Meu Negócio'
   const emailExibido = userData?.email || ''
   const inicialExibida = nomeExibido.charAt(0).toUpperCase()
+
+  // Alertas locais
+  const hoje = new Date().toISOString().split('T')[0]
+  const atrasadas = parcelas?.filter(p => p.status === 'atrasado') || []
+  const venceHoje = parcelas?.filter(p => p.status === 'vence_hoje') || []
+  const totalAlertas = atrasadas.length + venceHoje.length
 
   return (
     <div className="min-h-screen bg-dark-900 flex">
@@ -171,12 +178,58 @@ export default function Layout() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <button className="p-2 rounded-lg hover:bg-dark-600">
+              <button onClick={() => setShowAlerts(!showAlerts)} className="p-2 rounded-lg hover:bg-dark-600 relative">
                 <Bell className="w-5 h-5 text-gray-400" />
+                {totalAlertas > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
+                    {totalAlertas > 9 ? '9+' : totalAlertas}
+                  </span>
+                )}
               </button>
             </div>
           </div>
         </header>
+
+        {/* Painel de alertas */}
+        {showAlerts && (
+          <div className="md:hidden fixed inset-0 z-[90]" onClick={() => setShowAlerts(false)}>
+            <div className="fixed inset-0 bg-black/50" />
+            <div className="absolute top-14 right-2 left-2 bg-dark-800 rounded-2xl border border-dark-500/50 shadow-elevated animate-fade-in max-h-[60vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="p-4 border-b border-dark-500/50 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Alertas</h3>
+                <button onClick={() => setShowAlerts(false)} className="text-gray-500 hover:text-gray-300">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-3 space-y-2">
+                {totalAlertas === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-4">Nenhum alerta no momento ✅</p>
+                ) : (
+                  <>
+                    {venceHoje.length > 0 && (
+                      <div className="flex items-center gap-3 p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                        <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-300">{venceHoje.length} parcela{venceHoje.length > 1 ? 's' : ''} vence{venceHoje.length === 1 ? '' : 'm'} hoje</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{venceHoje.slice(0, 3).map(p => p.clienteNome).join(', ')}{venceHoje.length > 3 ? '...' : ''}</p>
+                        </div>
+                      </div>
+                    )}
+                    {atrasadas.length > 0 && (
+                      <div className="flex items-center gap-3 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                        <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-red-300">{atrasadas.length} parcela{atrasadas.length > 1 ? 's' : ''} em atraso</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{atrasadas.slice(0, 3).map(p => p.clienteNome).join(', ')}{atrasadas.length > 3 ? '...' : ''}</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="p-3 md:p-4 lg:p-8 max-w-7xl mx-auto">
