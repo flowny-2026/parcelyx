@@ -6,7 +6,7 @@ export default function Parcelamentos() {
   const { parcelamentos, clientes, addParcelamento, editParcelamento, removeParcelamento } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
-    clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: '', parcelasPagas: ''
+    clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: '', parcelasPagas: '', frequencia: 'mensal', formaPagamento: 'todos'
   })
   const [selectedContrato, setSelectedContrato] = useState(null)
   const [editMode, setEditMode] = useState(false)
@@ -40,12 +40,14 @@ export default function Parcelamentos() {
       entrada: parseFloat(form.entrada) || 0,
       parcelas: parseInt(form.parcelas),
       juros: parseFloat(form.juros) || 0,
-      vencimento: form.vencimento, // agora é data completa (YYYY-MM-DD)
+      vencimento: form.vencimento,
+      frequencia: form.frequencia,
+      formaPagamento: form.formaPagamento,
       parcelasPagas: parseInt(form.parcelasPagas) || 0,
       status: 'ativo',
       dataCriacao: new Date().toISOString().split('T')[0],
     })
-    setForm({ clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: '', parcelasPagas: '' })
+    setForm({ clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: '', parcelasPagas: '', frequencia: 'mensal', formaPagamento: 'todos' })
     setShowForm(false)
   }
 
@@ -242,6 +244,28 @@ export default function Parcelamentos() {
                 <input type="date" required value={form.vencimento}
                   onChange={(e) => setForm({ ...form, vencimento: e.target.value })}
                   className={inputClass} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Frequência *</label>
+                <select value={form.frequencia}
+                  onChange={(e) => setForm({ ...form, frequencia: e.target.value })}
+                  className={inputClass}>
+                  <option value="diario">Diário</option>
+                  <option value="semanal">Semanal</option>
+                  <option value="quinzenal">Quinzenal</option>
+                  <option value="mensal">Mensal</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Forma de pagamento</label>
+                <select value={form.formaPagamento}
+                  onChange={(e) => setForm({ ...form, formaPagamento: e.target.value })}
+                  className={inputClass}>
+                  <option value="todos">Todos os dias</option>
+                  <option value="dias_uteis">Dias úteis (Seg a Sex)</option>
+                </select>
               </div>
             </div>
             <div>

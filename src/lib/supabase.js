@@ -160,11 +160,13 @@ export async function createParcelamento(parcelamento) {
   try {
     const user = await getCurrentUser()
     
-    // Guarda parcelas_pagas antes de converter (não vai pro banco de parcelamentos)
+    // Guarda campos extras antes de converter (não vão pro banco de parcelamentos)
     const parcelasPagas = parcelamento.parcelasPagas || 0
+    const frequencia = parcelamento.frequencia || 'mensal'
+    const formaPagamento = parcelamento.formaPagamento || 'todos'
     
     // Remove campos que não existem na tabela parcelamentos
-    const { parcelasPagas: _, ...parcelamentoLimpo } = parcelamento
+    const { parcelasPagas: _, frequencia: _f, formaPagamento: _fp, ...parcelamentoLimpo } = parcelamento
     
     // Converte camelCase do React para snake_case do Supabase
     const parcelamentoSnake = mapKeys(parcelamentoLimpo, toSnake)
@@ -178,8 +180,8 @@ export async function createParcelamento(parcelamento) {
 
     if (parcError) throw parcError
 
-    // Gera parcelas - usa o objeto retornado (snake_case) + parcelas_pagas
-    const dadosCompletos = { ...parcData, ...parcelamentoSnake, parcelas_pagas: parcelasPagas }
+    // Gera parcelas - usa o objeto retornado (snake_case) + parcelas_pagas + frequencia
+    const dadosCompletos = { ...parcData, ...parcelamentoSnake, parcelas_pagas: parcelasPagas, frequencia: frequencia, forma_pagamento: formaPagamento }
     const parcelas = generateParcelas(dadosCompletos)
     const { error: parcelasError } = await supabase
       .from('parcelas')
@@ -275,25 +277,54 @@ function generateParcelas(parcelamento) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const parcelasPagas = parcelamento.parcelas_pagas || 0
+  const frequencia = parcelamento.frequencia || 'mensal'
+  const formaPagamento = parcelamento.forma_pagamento || 'todos'
 
   // Vencimento pode ser uma data completa (YYYY-MM-DD) ou um número (dia)
   const venc = parcelamento.vencimento
   const isFullDate = typeof venc === 'string' && venc.includes('-')
 
+  // Função auxiliar para pular fins de semana (dias úteis)
+  function ajustarDiaUtil(data) {
+    if (formaPagamento !== 'dias_uteis') return data
+    const d = new Date(data)
+    while (d.getDay() === 0 || d.getDay() === 6) { // 0=dom, 6=sab
+      d.setDate(d.getDate() + 1)
+    }
+    return d
+  }
+
   for (let i = 1; i <= parcelamento.parcelas; i++) {
     let d
 
     if (isFullDate) {
-      // Nova lógica: primeira parcela na data escolhida, demais +1 mês cada
       d = new Date(venc + 'T12:00:00')
-      d.setMonth(d.getMonth() + (i - 1))
-      // Ajusta dia caso não exista no mês
-      const diaOriginal = new Date(venc + 'T12:00:00').getDate()
-      if (d.getDate() !== diaOriginal) {
-        d.setDate(0)
+
+      // Calcula offset baseado na frequência
+      switch (frequencia) {
+        case 'diario':
+          d.setDate(d.getDate() + (i - 1))
+          break
+        case 'semanal':
+          d.setDate(d.getDate() + ((i - 1) * 7))
+          break
+        case 'quinzenal':
+          d.setDate(d.getDate() + ((i - 1) * 15))
+          break
+        case 'mensal':
+        default:
+          const diaOriginal = new Date(venc + 'T12:00:00').getDate()
+          d.setMonth(d.getMonth() + (i - 1))
+          if (d.getDate() !== diaOriginal) {
+            d.setDate(0)
+          }
+          break
       }
+
+      // Ajusta para dia útil se necessário
+      d = ajustarDiaUtil(d)
     } else {
-      // Lógica antiga (compatibilidade): usa dia do vencimento
+      // Lógica antiga (compatibilidade): usa dia do vencimento, sempre mensal
       d = new Date(parcelamento.data_criacao)
       d.setDate(parseInt(venc))
       d.setMonth(d.getMonth() + i)

@@ -86,7 +86,13 @@ const tickets = [];
 
 // ── UTILS ─────────────────────────────────────────────
 const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
-const fmtDate = s => s ? new Date(s+'T12:00:00').toLocaleDateString('pt-BR') : '';
+const fmtDate = s => {
+  if (!s) return '—';
+  // Se já está no formato dd/mm/yyyy, retorna direto
+  if (s.includes('/')) return s;
+  // Se é ISO date, formata
+  try { return new Date(s + 'T12:00:00').toLocaleDateString('pt-BR'); } catch(e) { return s; }
+};
 
 function showAdmToast(msg) {
   const t = document.getElementById('adm-toast');
@@ -284,43 +290,62 @@ function renderContas() {
       <td style="font-size:13px">${fmtDate(c.criado)}</td>
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn-sm edit" onclick="editarConta(${c.id})">Editar</button>
-          ${c.status==='Ativo'||c.status==='Trial' ? `<button class="btn-sm suspend" onclick="alterarStatus(${c.id},'Suspenso')">Suspender</button>` : ''}
-          ${c.status==='Suspenso' ? `<button class="btn-sm activate" onclick="alterarStatus(${c.id},'Ativo')">Ativar</button>` : ''}
-          ${c.status!=='Cancelado' ? `<button class="btn-sm cancel" onclick="alterarStatus(${c.id},'Cancelado')">Cancelar</button>` : ''}
+          <button class="btn-sm edit" onclick="editarConta('${c.id}')">Editar</button>
+          ${c.status==='Ativo'||c.status==='Trial' ? `<button class="btn-sm suspend" onclick="alterarStatus('${c.id}','Suspenso')">Suspender</button>` : ''}
+          ${c.status==='Suspenso' ? `<button class="btn-sm activate" onclick="alterarStatus('${c.id}','Ativo')">Ativar</button>` : ''}
+          ${c.status!=='Cancelado' ? `<button class="btn-sm cancel" onclick="alterarStatus('${c.id}','Cancelado')">Cancelar</button>` : ''}
         </div>
       </td>
     </tr>
   `).join('') || `<tr><td colspan="7" style="text-align:center;padding:24px;color:#737373">Nenhuma conta encontrada</td></tr>`;
 }
 
-function alterarStatus(id, novoStatus) {
-  const c = contas.find(x=>x.id===id);
+async function alterarStatus(id, novoStatus) {
+  const c = contas.find(x=>x.id==id);
   if (!c) return;
-  const confirmMsg = { Suspenso:'Suspender esta conta?', Cancelado:'Cancelar esta conta? Esta ação não pode ser desfeita.', Ativo:'Reativar esta conta?' };
+  const confirmMsg = { Suspenso:'Suspender esta conta?', Cancelado:'Cancelar esta conta?', Ativo:'Reativar esta conta?' };
   if (!confirm(confirmMsg[novoStatus])) return;
+  
   c.status = novoStatus;
+
+  // Salva no Supabase
+  try {
+    if (typeof supabase !== 'undefined') {
+      // Mapeia status visual para campo do banco
+      const planoMap = { Ativo: 'mensal', Trial: 'teste', Suspenso: 'suspenso', Cancelado: 'cancelado' };
+      await supabase.from('users').update({ plano: planoMap[novoStatus] || 'mensal' }).eq('id', id);
+    }
+  } catch(e) { console.error('Erro ao alterar status:', e); }
+
   renderContas();
   renderAdmDashboard();
   showAdmToast(`Conta ${novoStatus.toLowerCase()} com sucesso!`);
 }
 
 function editarConta(id) {
-  const c = contas.find(x=>x.id===id);
+  const c = contas.find(x=>x.id==id);
   if (!c) return;
+  // Converte data pt-BR para formato ISO para o input date
+  let vencISO = '';
+  if (c.vencimento && c.vencimento.includes('/')) {
+    const parts = c.vencimento.split('/');
+    vencISO = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+  } else if (c.vencimento) {
+    vencISO = c.vencimento;
+  }
   document.getElementById('modal-editar-body').innerHTML = `
     <div class="form-row">
       <div class="form-group"><label>Nome</label><input type="text" id="ec-nome" value="${c.nome}"></div>
-      <div class="form-group"><label>E-mail</label><input type="email" id="ec-email" value="${c.email}"></div>
+      <div class="form-group"><label>E-mail</label><input type="email" id="ec-email" value="${c.email}" disabled style="opacity:0.6"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Telefone</label><input type="tel" id="ec-tel" value="${c.telefone}"></div>
+      <div class="form-group"><label>Telefone</label><input type="tel" id="ec-tel" value="${c.telefone || ''}"></div>
       <div class="form-group"><label>Negócio</label><input type="text" id="ec-negocio" value="${c.negocio}"></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Plano</label>
         <select id="ec-plano">
-          ${['Mensal'].map(p=>`<option ${c.plano===p?'selected':''}>${p}</option>`).join('')}
+          ${['Mensal','Trial'].map(p=>`<option ${c.plano===p?'selected':''}>${p}</option>`).join('')}
         </select>
       </div>
       <div class="form-group"><label>Status</label>
@@ -330,25 +355,43 @@ function editarConta(id) {
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Vencimento</label><input type="date" id="ec-venc" value="${c.vencimento}"></div>
+      <div class="form-group"><label>Vencimento</label><input type="date" id="ec-venc" value="${vencISO}"></div>
     </div>
-    <div class="form-group"><label>Observações</label><textarea id="ec-obs" rows="2">${c.obs}</textarea></div>
-    <button class="btn-primary-sm btn-full mt-2" onclick="salvarEdicaoConta(${c.id})">Salvar alterações</button>
+    <div class="form-group"><label>Observações</label><textarea id="ec-obs" rows="2">${c.obs || ''}</textarea></div>
+    <button class="btn-primary-sm btn-full mt-2" onclick="salvarEdicaoConta('${c.id}')">Salvar alterações</button>
   `;
   document.getElementById('modal-editar-conta').classList.add('open');
 }
 
-function salvarEdicaoConta(id) {
-  const c = contas.find(x=>x.id===id);
+async function salvarEdicaoConta(id) {
+  const c = contas.find(x=>x.id==id);
   if (!c) return;
+  
+  const updates = {
+    nome: document.getElementById('ec-nome').value,
+    telefone: document.getElementById('ec-tel').value,
+    negocio: document.getElementById('ec-negocio').value,
+    plano: document.getElementById('ec-plano').value === 'Trial' ? 'teste' : 'mensal',
+    data_expiracao: document.getElementById('ec-venc').value || null,
+  };
+
+  // Salva no Supabase
+  try {
+    if (typeof supabase !== 'undefined') {
+      const { error } = await supabase.from('users').update(updates).eq('id', id);
+      if (error) console.error('Erro ao atualizar:', error);
+    }
+  } catch(e) { console.error('Erro:', e); }
+
+  // Atualiza local
   c.nome = document.getElementById('ec-nome').value;
-  c.email = document.getElementById('ec-email').value;
   c.telefone = document.getElementById('ec-tel').value;
   c.negocio = document.getElementById('ec-negocio').value;
   c.plano = document.getElementById('ec-plano').value;
   c.status = document.getElementById('ec-status').value;
   c.vencimento = document.getElementById('ec-venc').value;
   c.obs = document.getElementById('ec-obs').value;
+
   closeAdmModal('modal-editar-conta');
   renderContas();
   renderAdmDashboard();
