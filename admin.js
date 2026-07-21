@@ -290,6 +290,7 @@ function renderContas() {
       <td style="font-size:13px">${fmtDate(c.criado)}</td>
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn-sm activate" onclick="registrarPagamento('${c.id}')">💰 Pagou</button>
           <button class="btn-sm edit" onclick="editarConta('${c.id}')">Editar</button>
           ${c.status==='Ativo'||c.status==='Trial' ? `<button class="btn-sm suspend" onclick="alterarStatus('${c.id}','Suspenso')">Suspender</button>` : ''}
           ${c.status==='Suspenso' ? `<button class="btn-sm activate" onclick="alterarStatus('${c.id}','Ativo')">Ativar</button>` : ''}
@@ -298,6 +299,75 @@ function renderContas() {
       </td>
     </tr>
   `).join('') || `<tr><td colspan="7" style="text-align:center;padding:24px;color:#737373">Nenhuma conta encontrada</td></tr>`;
+}
+
+async function registrarPagamento(id) {
+  const c = contas.find(x => x.id == id);
+  if (!c) return;
+
+  const valor = prompt(`Valor pago por ${c.nome} (R$):`, '29.00');
+  if (!valor) return;
+  const valorNum = parseFloat(valor);
+  if (isNaN(valorNum) || valorNum <= 0) { showAdmToast('Valor inválido'); return; }
+
+  const meses = prompt('Quantos meses liberar?', '1');
+  if (!meses) return;
+  const mesesNum = parseInt(meses);
+  if (isNaN(mesesNum) || mesesNum <= 0) { showAdmToast('Quantidade inválida'); return; }
+
+  // Calcula nova data de expiração
+  const hoje = new Date();
+  const novaExpiracao = new Date(hoje);
+  novaExpiracao.setMonth(novaExpiracao.getMonth() + mesesNum);
+  const dataExpStr = novaExpiracao.toISOString().split('T')[0];
+
+  try {
+    if (typeof supabase !== 'undefined') {
+      // 1. Atualiza plano e data de expiração do usuário
+      const { error: userError } = await supabase.from('users')
+        .update({ plano: 'mensal', data_expiracao: dataExpStr })
+        .eq('id', id);
+      if (userError) throw userError;
+
+      // 2. Registra pagamento na tabela pagamentos (contabilidade)
+      const { error: pagError } = await supabase.from('pagamentos').insert({
+        user_id: id,
+        nome_cliente: c.nome,
+        email_cliente: c.email,
+        telefone_cliente: c.telefone || '',
+        plano: 'completo',
+        valor: valorNum,
+        status: 'aprovado',
+        data_pagamento: hoje.toISOString().split('T')[0],
+        data_expiracao: dataExpStr,
+        observacoes: `Pagamento registrado pelo admin - ${mesesNum} mês(es)`
+      });
+      if (pagError) console.warn('Erro ao registrar pagamento:', pagError);
+    }
+  } catch (e) {
+    console.error('Erro:', e);
+    showAdmToast('❌ Erro ao registrar pagamento');
+    return;
+  }
+
+  // Atualiza local
+  c.status = 'Ativo';
+  c.plano = 'Mensal';
+  c.vencimento = novaExpiracao.toLocaleDateString('pt-BR');
+
+  // Adiciona na lista local de pagamentos pra aparecer no financeiro
+  pagamentos.push({
+    usuario: c.nome,
+    plano: 'Mensal',
+    valor: valorNum,
+    data: hoje.toISOString().split('T')[0],
+    status: 'Pago'
+  });
+
+  renderContas();
+  renderAdmDashboard();
+  renderAdmFinanceiro();
+  showAdmToast(`✅ Pagamento de R$ ${valorNum.toFixed(2)} registrado! Acesso liberado até ${c.vencimento}`);
 }
 
 async function alterarStatus(id, novoStatus) {
