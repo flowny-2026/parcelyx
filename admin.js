@@ -399,8 +399,10 @@ function editarConta(id) {
   let vencISO = '';
   if (c.vencimento && c.vencimento.includes('/')) {
     const parts = c.vencimento.split('/');
-    vencISO = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-  } else if (c.vencimento) {
+    if (parts.length === 3) {
+      vencISO = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+    }
+  } else if (c.vencimento && c.vencimento !== 'Não definido') {
     vencISO = c.vencimento;
   }
   document.getElementById('modal-editar-body').innerHTML = `
@@ -448,8 +450,14 @@ async function salvarEdicaoConta(id) {
   // Salva no Supabase
   try {
     if (typeof supabase !== 'undefined') {
+      console.log('💾 Salvando:', id, updates);
       const { error } = await supabase.from('users').update(updates).eq('id', id);
-      if (error) console.error('Erro ao atualizar:', error);
+      if (error) {
+        console.error('❌ Erro ao atualizar:', error);
+        showAdmToast('❌ Erro ao salvar: ' + error.message);
+        return;
+      }
+      console.log('✅ Salvo com sucesso');
     }
   } catch(e) { console.error('Erro:', e); }
 

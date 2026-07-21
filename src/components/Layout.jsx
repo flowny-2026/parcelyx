@@ -36,11 +36,14 @@ export default function Layout() {
   let diasRestantes = null
   let planoExpirado = false
 
+  console.log('🔑 Plano:', plano, '| Expira:', dataExpiracao, '| userData:', userData)
+
   if (dataExpiracao) {
     const expDate = new Date(dataExpiracao + 'T23:59:59')
     const hojeDt = new Date()
     diasRestantes = Math.ceil((expDate - hojeDt) / (1000 * 60 * 60 * 24))
     planoExpirado = diasRestantes < 0
+    console.log('📅 Dias restantes:', diasRestantes, '| Expirado:', planoExpirado)
   }
 
   // Se o plano expirou, bloqueia acesso
