@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { TrendingUp, AlertTriangle, Clock, Percent, ArrowUpRight, ArrowDownRight, Users, CreditCard, DollarSign, Headphones, ChevronRight, Wallet, Edit3, Check } from 'lucide-react'
+import { TrendingUp, AlertTriangle, Clock, Users, CreditCard, DollarSign, Headphones, ChevronRight, Wallet, Edit3, Check } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { getStats, getRecebimentosRecentes, getChartData, userData, updateUserData, loadAllData, parcelas, parcelamentos } = useApp()
+  const { getStats, getRecebimentosRecentes, getChartData, userData, updateUserData, loadAllData, parcelas, parcelamentos, clientes } = useApp()
   const stats = getStats()
   const recentes = getRecebimentosRecentes()
   const chartData = getChartData()
@@ -16,11 +16,14 @@ export default function Dashboard() {
   const nomeExibido = userData?.nome || userData?.negocio || 'Usuário'
   const capitalInicial = userData?.capitalDisponivel || userData?.capital_disponivel || 0
 
-  // Calcula capital disponível dinamicamente:
-  // Capital inicial + total recebido (parcelas pagas) - total emprestado (valor dos contratos)
   const totalEmprestado = parcelamentos.reduce((sum, p) => sum + (p.valorTotal || 0), 0)
   const totalRecebido = parcelas.filter(p => p.status === 'pago').reduce((sum, p) => sum + (p.valor || 0), 0)
   const capitalDisponivel = capitalInicial - totalEmprestado + totalRecebido
+
+  const totalClientes = clientes?.length || 0
+  const totalContratos = parcelamentos?.length || 0
+  const venceHoje = parcelas.filter(p => p.status === 'vence_hoje').length
+  const atrasadas = parcelas.filter(p => p.status === 'atrasado').length
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
@@ -34,17 +37,131 @@ export default function Dashboard() {
     setCapitalValue('')
   }
 
+  // Parcelas que vencem hoje ou amanhã
+  const hoje = new Date()
+  hoje.setHours(0,0,0,0)
+  const amanha = new Date(hoje)
+  amanha.setDate(amanha.getDate() + 1)
+  
+  const parcelasHoje = parcelas.filter(p => p.status === 'vence_hoje')
+  const parcelasAmanha = parcelas.filter(p => {
+    if (p.status === 'pago') return false
+    const venc = new Date(p.vencimento + 'T12:00:00')
+    venc.setHours(0,0,0,0)
+    return venc.getTime() === amanha.getTime()
+  })
+  const parcelasAtrasadasList = parcelas.filter(p => p.status === 'atrasado').slice(0, 5)
+
   return (
     <div className="space-y-5 pb-20 md:pb-0 animate-fade-in">
-      {/* Header com saudação */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-400">Bem vindo,</p>
-          <h1 className="text-xl font-bold text-white">{nomeExibido}</h1>
+      {/* Header */}
+      <h1 className="text-xl font-bold text-white text-center md:text-left">Início</h1>
+
+      {/* Alertas de vencimento de contratos */}
+      {parcelasHoje.length > 0 && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4 text-amber-400" />
+            <span className="text-sm font-semibold text-amber-300">
+              {parcelasHoje.length} parcela{parcelasHoje.length > 1 ? 's' : ''} vence{parcelasHoje.length === 1 ? '' : 'm'} hoje
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 ml-6">
+            {parcelasHoje.slice(0, 5).map(p => `${p.clienteNome} (${formatCurrency(p.valor)})`).join(' • ')}
+            {parcelasHoje.length > 5 ? ` e mais ${parcelasHoje.length - 5}...` : ''}
+          </p>
+        </div>
+      )}
+
+      {parcelasAmanha.length > 0 && (
+        <div className="p-3 bg-primary-500/10 border border-primary-500/30 rounded-xl">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4 text-primary-400" />
+            <span className="text-sm font-semibold text-primary-300">
+              {parcelasAmanha.length} parcela{parcelasAmanha.length > 1 ? 's' : ''} vence{parcelasAmanha.length === 1 ? '' : 'm'} amanhã
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 ml-6">
+            {parcelasAmanha.slice(0, 5).map(p => `${p.clienteNome} (${formatCurrency(p.valor)})`).join(' • ')}
+            {parcelasAmanha.length > 5 ? ` e mais ${parcelasAmanha.length - 5}...` : ''}
+          </p>
+        </div>
+      )}
+
+      {parcelasAtrasadasList.length > 0 && (
+        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="w-4 h-4 text-red-400" />
+            <span className="text-sm font-semibold text-red-300">
+              {atrasadas} parcela{atrasadas > 1 ? 's' : ''} em atraso
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 ml-6">
+            {parcelasAtrasadasList.map(p => `${p.clienteNome} (${formatCurrency(p.valor)})`).join(' • ')}
+            {atrasadas > 5 ? ` e mais ${atrasadas - 5}...` : ''}
+          </p>
+        </div>
+      )}
+
+      {/* Cards principais - Hoje e Atrasadas */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50 cursor-pointer" onClick={() => navigate('/parcelas')}>
+          <div className="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center mb-3">
+            <Clock className="w-5 h-5 text-amber-400" />
+          </div>
+          <p className="text-sm text-gray-400">Hoje</p>
+          <p className="text-3xl font-bold text-white">{venceHoje}</p>
+        </div>
+        <div className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50 cursor-pointer" onClick={() => navigate('/parcelas')}>
+          <div className="w-9 h-9 bg-red-500/10 rounded-xl flex items-center justify-center mb-3">
+            <AlertTriangle className="w-5 h-5 text-red-400" />
+          </div>
+          <p className="text-sm text-gray-400">Atrasadas</p>
+          <p className="text-3xl font-bold text-white">{atrasadas}</p>
         </div>
       </div>
 
-      {/* Card Capital Disponível para Empréstimo */}
+      {/* Cards Clientes e Contratos */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50 cursor-pointer" onClick={() => navigate('/clientes')}>
+          <div className="w-9 h-9 bg-primary-500/10 rounded-xl flex items-center justify-center mb-3">
+            <Users className="w-5 h-5 text-primary-400" />
+          </div>
+          <p className="text-sm text-gray-400">Clientes</p>
+          <p className="text-3xl font-bold text-white">{totalClientes}</p>
+        </div>
+        <div className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50 cursor-pointer" onClick={() => navigate('/parcelamentos')}>
+          <div className="w-9 h-9 bg-pix-500/10 rounded-xl flex items-center justify-center mb-3">
+            <CreditCard className="w-5 h-5 text-pix-400" />
+          </div>
+          <p className="text-sm text-gray-400">Contratos</p>
+          <p className="text-3xl font-bold text-white">{totalContratos}</p>
+        </div>
+      </div>
+
+      {/* Gráfico de Clientes */}
+      <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
+        <h3 className="text-base font-semibold text-white mb-4">Clientes</h3>
+        <div className="h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorClientes" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e3042" />
+              <XAxis dataKey="mes" tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #1e3042', backgroundColor: '#141f2e', color: '#f1f5f9' }} />
+              <Area type="monotone" dataKey="recebido" stroke="#10b981" strokeWidth={2.5} fill="url(#colorClientes)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Capital disponível */}
       <div className="bg-dark-700 rounded-2xl p-5 border border-primary-500/30">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
@@ -52,7 +169,7 @@ export default function Dashboard() {
               <Wallet className="w-5 h-5 text-primary-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Capital disponível para empréstimo</p>
+              <p className="text-xs text-gray-400">Capital disponível</p>
               {!editandoCapital && (
                 <p className={`text-2xl font-bold ${capitalDisponivel >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurrency(capitalDisponivel)}</p>
               )}
@@ -60,15 +177,14 @@ export default function Dashboard() {
           </div>
           {!editandoCapital && (
             <button onClick={() => { setEditandoCapital(true); setCapitalValue(capitalInicial.toString()) }}
-              className="p-2 rounded-lg bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20"
-              title="Editar capital inicial">
+              className="p-2 rounded-lg bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20">
               <Edit3 className="w-4 h-4" />
             </button>
           )}
         </div>
         {editandoCapital && (
           <div className="mt-2">
-            <p className="text-xs text-gray-500 mb-2">Informe seu capital total inicial (quanto você tem pra emprestar)</p>
+            <p className="text-xs text-gray-500 mb-2">Capital total inicial</p>
             <div className="flex items-center gap-2">
               <span className="text-gray-400 text-sm">R$</span>
               <input type="number" step="0.01" value={capitalValue}
@@ -100,132 +216,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Card principal - Capital Exposto / Gradient */}
-      <div className="gradient-card rounded-2xl p-5 relative overflow-hidden cursor-pointer" onClick={() => navigate('/financeiro')}>
-        <div className="relative z-10">
-          <p className="text-sm text-white/80 mb-1">Capital Exposto</p>
-          <p className="text-3xl font-bold text-white">{formatCurrency(stats.totalAtrasado + stats.recebidoMes)}</p>
-          <div className="mt-4 bg-white/15 backdrop-blur-sm rounded-xl p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-white">Minhas Finanças</p>
-                <p className="text-xs text-white/70">Fluxo de caixa, lucro e transações em um toque</p>
-              </div>
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <ChevronRight className="w-4 h-4 text-white" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Cards de resumo - estilo dark */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50">
-          <div className="flex items-center justify-between mb-2">
-            <Users className="w-5 h-5 text-pix-400" />
-            <span className="text-lg font-bold text-white">{stats.vencendoHoje || 0}</span>
-          </div>
-          <p className="text-xs text-gray-400">Clientes</p>
-        </div>
-        <div className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50">
-          <div className="flex items-center justify-between mb-2">
-            <CreditCard className="w-5 h-5 text-pix-400" />
-            <span className="text-lg font-bold text-white">{stats.vencendoHoje || 0}</span>
-          </div>
-          <p className="text-xs text-gray-400">Contratos</p>
-        </div>
-      </div>
-
-      {/* A Receber */}
-      <div className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-pix-500/10 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-pix-400" />
-            </div>
-            <span className="text-sm text-gray-400">A Receber</span>
-          </div>
-          <p className="text-xl font-bold text-white">{formatCurrency(stats.recebidoMes)}</p>
-        </div>
-      </div>
-
-      {/* Ações Rápidas */}
-      <div>
-        <h3 className="text-base font-semibold text-white mb-3">Ações Rápidas</h3>
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { icon: CreditCard, label: 'Contratos', color: 'text-pix-400', path: '/parcelamentos' },
-            { icon: DollarSign, label: 'Receber', color: 'text-pix-400', path: '/parcelas' },
-            { icon: Users, label: 'Clientes', color: 'text-pix-400', path: '/clientes' },
-            { icon: Headphones, label: 'Suporte', color: 'text-pix-400', path: 'https://wa.me/5516992383821?text=Olá!%20Preciso%20de%20suporte%20no%20Parcelyx.' },
-          ].map((action, i) => (
-            <a key={i} href={action.path.startsWith('http') ? action.path : undefined}
-              target={action.path.startsWith('http') ? '_blank' : undefined}
-              rel={action.path.startsWith('http') ? 'noreferrer' : undefined}
-              onClick={(e) => { if (!action.path.startsWith('http')) { e.preventDefault(); navigate(action.path) } }}
-              className="flex flex-col items-center gap-2 cursor-pointer">
-              <div className="w-14 h-14 bg-dark-700 border border-dark-500/50 rounded-xl flex items-center justify-center hover:border-pix-500/30 transition-colors">
-                <action.icon className={`w-5 h-5 ${action.color}`} />
-              </div>
-              <span className="text-xs text-gray-400">{action.label}</span>
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats detalhados */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: 'Recebido no mês', value: formatCurrency(stats.recebidoMes), icon: TrendingUp, color: 'text-pix-400', bg: 'bg-pix-500/10', trend: '+12%', trendUp: true },
-          { label: 'Total em atraso', value: formatCurrency(stats.totalAtrasado), icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/10', trend: '-5%', trendUp: false },
-          { label: 'Vencendo hoje', value: stats.vencendoHoje, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: null },
-          { label: 'Inadimplência', value: `${stats.inadimplencia}%`, icon: Percent, color: 'text-primary-400', bg: 'bg-primary-500/10', trend: '-2%', trendUp: false },
-        ].map((card, i) => (
-          <div key={i} className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50 card-hover">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 ${card.bg} rounded-xl flex items-center justify-center`}>
-                <card.icon className={`w-5 h-5 ${card.color}`} />
-              </div>
-              {card.trend && (
-                <span className={`flex items-center gap-0.5 text-xs font-medium ${card.trendUp ? 'text-pix-400' : 'text-red-400'}`}>
-                  {card.trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                  {card.trend}
-                </span>
-              )}
-            </div>
-            <p className="text-lg font-bold text-white">{card.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{card.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Chart */}
-      <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
-        <h3 className="text-base font-semibold text-white mb-4">Recebimentos</h3>
-        <div className="h-48 md:h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorRecebido" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e3042" />
-              <XAxis dataKey="mes" tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ borderRadius: '12px', border: '1px solid #1e3042', backgroundColor: '#141f2e', color: '#f1f5f9' }}
-                formatter={(value) => [formatCurrency(value), 'Recebido']}
-              />
-              <Area type="monotone" dataKey="recebido" stroke="#10b981" strokeWidth={2.5} fill="url(#colorRecebido)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Recent payments */}
+      {/* Recebimentos recentes */}
       <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
         <h3 className="text-base font-semibold text-white mb-4">Recebimentos recentes</h3>
         <div className="space-y-3">
@@ -250,6 +241,30 @@ export default function Dashboard() {
               </div>
             ))
           )}
+        </div>
+      </div>
+
+      {/* Ações Rápidas */}
+      <div>
+        <h3 className="text-base font-semibold text-white mb-3">Ações Rápidas</h3>
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { icon: CreditCard, label: 'Contratos', path: '/parcelamentos' },
+            { icon: DollarSign, label: 'Receber', path: '/parcelas' },
+            { icon: Users, label: 'Clientes', path: '/clientes' },
+            { icon: Headphones, label: 'Suporte', path: 'https://wa.me/5516992383821?text=Olá!%20Preciso%20de%20suporte%20no%20Parcelyx.' },
+          ].map((action, i) => (
+            <a key={i} href={action.path.startsWith('http') ? action.path : undefined}
+              target={action.path.startsWith('http') ? '_blank' : undefined}
+              rel={action.path.startsWith('http') ? 'noreferrer' : undefined}
+              onClick={(e) => { if (!action.path.startsWith('http')) { e.preventDefault(); navigate(action.path) } }}
+              className="flex flex-col items-center gap-2 cursor-pointer">
+              <div className="w-14 h-14 bg-dark-700 border border-dark-500/50 rounded-xl flex items-center justify-center hover:border-pix-500/30 transition-colors">
+                <action.icon className="w-5 h-5 text-pix-400" />
+              </div>
+              <span className="text-xs text-gray-400">{action.label}</span>
+            </a>
+          ))}
         </div>
       </div>
     </div>

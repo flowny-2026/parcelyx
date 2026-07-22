@@ -36,14 +36,11 @@ export default function Layout() {
   let diasRestantes = null
   let planoExpirado = false
 
-  console.log('🔑 Plano:', plano, '| Expira:', dataExpiracao, '| userData:', userData)
-
   if (dataExpiracao) {
     const expDate = new Date(dataExpiracao + 'T23:59:59')
     const hojeDt = new Date()
     diasRestantes = Math.ceil((expDate - hojeDt) / (1000 * 60 * 60 * 24))
     planoExpirado = diasRestantes < 0
-    console.log('📅 Dias restantes:', diasRestantes, '| Expirado:', planoExpirado)
   }
 
   // Se o plano expirou, bloqueia acesso
@@ -282,7 +279,7 @@ export default function Layout() {
         )}
 
         {/* Banner plano expirando */}
-        {diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 3 && (
+        {diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 7 && (
           <div className="mx-3 md:mx-4 lg:mx-8 mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
             <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
             <div className="flex-1">
