@@ -279,7 +279,7 @@ export default function Layout() {
         )}
 
         {/* Banner plano expirando */}
-        {diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 7 && (
+        {diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 2 && (
           <div className="mx-3 md:mx-4 lg:mx-8 mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
             <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
             <div className="flex-1">
