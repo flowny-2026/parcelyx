@@ -380,14 +380,6 @@ export default function Clientes() {
       </div>
 
       {/* Botão flutuante mobile */}
-      {!showForm && (
-        <div className="md:hidden fixed bottom-20 left-4 right-4 z-40">
-          <button onClick={() => setShowForm(true)}
-            className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-glow-blue">
-            <Plus className="w-5 h-5" /> Novo Cliente
-          </button>
-        </div>
-      )}
     </div>
   )
 }

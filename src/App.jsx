@@ -13,6 +13,7 @@ import Financeiro from './pages/Financeiro'
 import Configuracoes from './pages/Configuracoes'
 import Pagamentos from './pages/Pagamentos'
 import Agenda from './pages/Agenda'
+import Novidades from './pages/Novidades'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="cobrancas" element={<Cobrancas />} />
             <Route path="financeiro" element={<Financeiro />} />
             <Route path="agenda" element={<Agenda />} />
+            <Route path="novidades" element={<Novidades />} />
             <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="pagamentos" element={<Pagamentos />} />
           </Route>
