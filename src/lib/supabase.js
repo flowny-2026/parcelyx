@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Configuração usando variáveis de ambiente
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rflwwbzqfpivezcnhbum.supabase.co'
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmbHd3YnpxZnBpdmV6Y25oYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3Mjg0MzAsImV4cCI6MjA5NzMwNDQzMH0.NZyqEyACBGlB7Ckywa0Cci4d4AFq2eQdDycx1OfRoo0'
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('⚠️ Credenciais do Supabase não configuradas. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.')
+if (!import.meta.env.VITE_SUPABASE_URL) {
+  console.warn('⚠️ Credenciais do Supabase não configuradas. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.')
 }
 
-export const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || '')
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 // ====== MAPEADOR snake_case → camelCase ======
 // O Supabase retorna "cliente_nome", mas o React espera "clienteNome"
