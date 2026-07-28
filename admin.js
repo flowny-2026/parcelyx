@@ -324,10 +324,17 @@ async function registrarPagamento(id) {
   try {
     if (typeof supabase !== 'undefined') {
       // 1. Atualiza plano e data de expiração do usuário
-      const { error: userError } = await supabase.from('users')
+      console.log('💾 Atualizando user:', id, '→ plano: mensal, data_expiracao:', dataExpStr);
+      const { data: updData, error: userError } = await supabase.from('users')
         .update({ plano: 'mensal', data_expiracao: dataExpStr })
-        .eq('id', id);
-      if (userError) throw userError;
+        .eq('id', id)
+        .select();
+      
+      if (userError) {
+        console.error('❌ Erro ao atualizar user:', userError);
+        throw userError;
+      }
+      console.log('✅ User atualizado:', updData);
 
       // 2. Registra pagamento na tabela pagamentos (contabilidade)
       const { error: pagError } = await supabase.from('pagamentos').insert({
@@ -342,7 +349,8 @@ async function registrarPagamento(id) {
         data_expiracao: dataExpStr,
         observacoes: `Pagamento registrado pelo admin - ${mesesNum} mês(es)`
       });
-      if (pagError) console.warn('Erro ao registrar pagamento:', pagError);
+      if (pagError) console.warn('⚠️ Erro ao registrar pagamento:', pagError);
+      else console.log('✅ Pagamento registrado');
     }
   } catch (e) {
     console.error('Erro:', e);

@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { Building, CreditCard, Bell, Download, Upload, Database } from 'lucide-react'
 
 export default function Configuracoes() {
-  const navigate = useNavigate()
   const { userData, updateUserData, clientes, parcelamentos, parcelas } = useApp()
   const fileInputRef = useRef(null)
   const [config, setConfig] = useState({
@@ -293,10 +291,6 @@ export default function Configuracoes() {
         <p className="text-center text-xs text-gray-600 pt-4">
           Parcelyx v2.0.0 • © 2026 Todos os direitos reservados
         </p>
-        <button onClick={() => navigate('/novidades')}
-          className="w-full mt-3 py-2.5 bg-dark-600 hover:bg-dark-500 text-gray-300 text-sm font-medium rounded-xl border border-dark-500/50 transition-all">
-          🆕 Ver novidades da atualização
-        </button>
       </div>
     </div>
   )
