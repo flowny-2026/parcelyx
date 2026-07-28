@@ -124,7 +124,20 @@ export function AppProvider({ children }) {
 
       if (clientesRes.data) setClientes(clientesRes.data)
       if (parcelamentosRes.data) setParcelamentos(parcelamentosRes.data)
-      if (parcelasRes.data) setParcelas(parcelasRes.data)
+      if (parcelasRes.data) {
+        // Recalcula status das parcelas baseado na data atual
+        const hoje = new Date()
+        hoje.setHours(0, 0, 0, 0)
+        const parcelasAtualizadas = parcelasRes.data.map(p => {
+          if (p.status === 'pago') return p // não muda parcelas pagas
+          const venc = new Date(p.vencimento + 'T12:00:00')
+          venc.setHours(0, 0, 0, 0)
+          if (venc < hoje) return { ...p, status: 'atrasado' }
+          if (venc.getTime() === hoje.getTime()) return { ...p, status: 'vence_hoje' }
+          return { ...p, status: 'pendente' }
+        })
+        setParcelas(parcelasAtualizadas)
+      }
       if (userRes.data) setUserData(userRes.data)
       
       console.log('Dados carregados com sucesso')

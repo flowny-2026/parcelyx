@@ -534,11 +534,8 @@ async function criarConta() {
         if (dbError) console.warn('Erro ao salvar na tabela users:', dbError);
       }
 
-      // 3. Refaz login como admin (signUp desloga)
-      const admEmail = 'admin@parcelyx.com';
-      const admSenhaEl = document.getElementById('adm-senha');
-      // Relogar como admin
-      await supabase.auth.signInWithPassword({ email: admEmail, password: 'Admin@2026' });
+      // Nota: o signUp desloga o admin. A sessão será restaurada no próximo acesso.
+      // O admin precisará relogar se quiser continuar operando.
     }
   } catch (e) {
     console.error('Erro ao criar conta:', e);

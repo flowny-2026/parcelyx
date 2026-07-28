@@ -22,14 +22,14 @@ export default function Agenda() {
 
   // Parcelas do mês
   const parcelasMes = parcelas.filter(p => {
-    const d = new Date(p.vencimento)
+    const d = new Date(p.vencimento + 'T12:00:00')
     return d.getMonth() === mes && d.getFullYear() === ano
   })
 
   // Agrupa parcelas por dia
   const parcelasPorDia = {}
   parcelasMes.forEach(p => {
-    const dia = new Date(p.vencimento).getDate()
+    const dia = new Date(p.vencimento + 'T12:00:00').getDate()
     if (!parcelasPorDia[dia]) parcelasPorDia[dia] = []
     parcelasPorDia[dia].push(p)
   })

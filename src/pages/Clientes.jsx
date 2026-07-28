@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import { Plus, Search, Phone, User, X, ChevronRight, Edit3, Trash2, MessageSquare, ArrowLeft, Check, Clock, AlertTriangle } from 'lucide-react'
 
 export default function Clientes() {
-  const { clientes, addCliente, editCliente, removeCliente, parcelas } = useApp()
+  const { clientes, addCliente, editCliente, removeCliente, parcelas, parcelamentos } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [filtro, setFiltro] = useState('todos')
@@ -17,12 +17,17 @@ export default function Clientes() {
     const parcelasCliente = parcelas?.filter(p => p.clienteId === clienteId) || []
     if (parcelasCliente.length === 0) return { label: 'Neutro', color: 'bg-gray-500/10 text-gray-400 border-gray-500/20' }
     
-    const totalParcelas = parcelasCliente.filter(p => p.status === 'pago' || p.status === 'atrasado').length
-    const atrasadas = parcelasCliente.filter(p => p.status === 'atrasado').length
+    const totalParcelas = parcelasCliente.length
+    const atrasadasCliente = parcelasCliente.filter(p => p.status === 'atrasado').length
+    const pagasCliente = parcelasCliente.filter(p => p.status === 'pago').length
     
     if (totalParcelas === 0) return { label: 'Neutro', color: 'bg-gray-500/10 text-gray-400 border-gray-500/20' }
     
-    const percentualAtraso = (atrasadas / Math.max(totalParcelas, 1)) * 100
+    // Calcula baseado em: atrasadas / (pagas + atrasadas) — ignora pendentes futuros
+    const base = pagasCliente + atrasadasCliente
+    if (base === 0) return { label: 'Neutro', color: 'bg-gray-500/10 text-gray-400 border-gray-500/20' }
+    
+    const percentualAtraso = (atrasadasCliente / base) * 100
     
     if (percentualAtraso === 0) return { label: 'Bom pagador', color: 'bg-pix-500/10 text-pix-400 border-pix-500/20' }
     if (percentualAtraso <= 30) return { label: 'Neutro', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' }
@@ -50,7 +55,13 @@ export default function Clientes() {
   }
 
   const handleDelete = (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
+    // Verifica se cliente tem parcelamentos ativos
+    const temContratos = parcelamentos?.some(p => p.clienteId === id)
+    if (temContratos) {
+      alert('⚠️ Este cliente possui contratos vinculados. Exclua os contratos primeiro.')
+      return
+    }
+    if (window.confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
       removeCliente(id)
       setSelectedClient(null)
     }

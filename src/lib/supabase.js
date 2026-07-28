@@ -1,19 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Configuração usando variáveis de ambiente com fallback
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rflwwbzqfpivezcnhbum.supabase.co'
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmbHd3YnpxZnBpdmV6Y25oYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3Mjg0MzAsImV4cCI6MjA5NzMwNDQzMH0.NZyqEyACBGlB7Ckywa0Cci4d4AFq2eQdDycx1OfRoo0'
+// Configuração usando variáveis de ambiente
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Validação de configuração (apenas warning, não bloqueia)
-if (!import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  console.warn(
-    '⚠️ Credenciais do Supabase não configuradas no ambiente. ' +
-    'Usando credenciais padrão. Configure as variáveis VITE_SUPABASE_URL ' +
-    'e VITE_SUPABASE_ANON_KEY no Vercel.'
-  )
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('⚠️ Credenciais do Supabase não configuradas. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.')
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+export const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || '')
 
 // ====== MAPEADOR snake_case → camelCase ======
 // O Supabase retorna "cliente_nome", mas o React espera "clienteNome"
@@ -227,6 +222,7 @@ export async function getParcelas() {
 }
 
 export async function marcarParcelaPaga(id) {
+  // Verifica concorrência: só atualiza se status != 'pago'
   const { data, error } = await supabase
     .from('parcelas')
     .update({ 
@@ -234,8 +230,13 @@ export async function marcarParcelaPaga(id) {
       data_pagamento: new Date().toISOString().split('T')[0]
     })
     .eq('id', id)
+    .neq('status', 'pago') // previne double-pay
     .select()
     .single()
+  
+  if (!data && !error) {
+    return { data: null, error: new Error('Parcela já foi paga') }
+  }
   
   return { data: data ? mapKeys(data, toCamel) : data, error }
 }
@@ -294,6 +295,14 @@ function generateParcelas(parcelamento) {
     return d
   }
 
+  // Helper para formatar data local (evita problema de fuso UTC)
+  function formatDateLocal(date) {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
   for (let i = 1; i <= parcelamento.parcelas; i++) {
     let d
 
@@ -313,10 +322,12 @@ function generateParcelas(parcelamento) {
           break
         case 'mensal':
         default:
-          const diaOriginal = new Date(venc + 'T12:00:00').getDate()
+          // Recria data base a cada iteração para evitar bug de acumulação
+          d = new Date(venc + 'T12:00:00')
+          const diaOriginal = d.getDate()
           d.setMonth(d.getMonth() + (i - 1))
           if (d.getDate() !== diaOriginal) {
-            d.setDate(0)
+            d.setDate(0) // último dia do mês anterior
           }
           break
       }
@@ -341,7 +352,7 @@ function generateParcelas(parcelamento) {
 
     if (i <= parcelasPagas) {
       status = 'pago'
-      dataPagamento = d.toISOString().split('T')[0]
+      dataPagamento = formatDateLocal(d)
     } else if (dNormalized < today) {
       status = 'atrasado'
     } else if (dNormalized.getTime() === today.getTime()) {
@@ -355,10 +366,20 @@ function generateParcelas(parcelamento) {
       numero: i,
       total_parcelas: parcelamento.parcelas,
       valor: Math.round(valorParcela * 100) / 100,
-      vencimento: d.toISOString().split('T')[0],
+      vencimento: formatDateLocal(d),
       status: status,
       data_pagamento: dataPagamento
     })
+  }
+
+  // Reconciliação de arredondamento: ajusta última parcela para bater o total
+  if (parcelas.length > 0) {
+    const totalEsperado = Math.round(((parcelamento.valor_total - parcelamento.entrada) * (1 + parcelamento.juros / 100)) * 100) / 100
+    const totalGerado = parcelas.reduce((sum, p) => sum + p.valor, 0)
+    const diferenca = Math.round((totalEsperado - totalGerado) * 100) / 100
+    if (diferenca !== 0) {
+      parcelas[parcelas.length - 1].valor = Math.round((parcelas[parcelas.length - 1].valor + diferenca) * 100) / 100
+    }
   }
 
   return parcelas

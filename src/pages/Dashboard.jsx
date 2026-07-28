@@ -16,7 +16,7 @@ export default function Dashboard() {
   const nomeExibido = userData?.nome || userData?.negocio || 'Usuário'
   const capitalInicial = userData?.capitalDisponivel || userData?.capital_disponivel || 0
 
-  const totalEmprestado = parcelamentos.reduce((sum, p) => sum + (p.valorTotal || 0), 0)
+  const totalEmprestado = parcelamentos.reduce((sum, p) => sum + ((p.valorTotal || 0) - (p.entrada || 0)), 0)
   const totalRecebido = parcelas.filter(p => p.status === 'pago').reduce((sum, p) => sum + (p.valor || 0), 0)
   const capitalDisponivel = capitalInicial - totalEmprestado + totalRecebido
 

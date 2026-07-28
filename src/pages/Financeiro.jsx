@@ -26,7 +26,8 @@ export default function Financeiro() {
     .reduce((sum, p) => sum + p.valor, 0)
 
   const totalGeral = totalRecebido + totalPendente + totalAtrasado
-  const lucro = totalRecebido - totalAtrasado
+  const totalEmprestadoReal = parcelamentos.reduce((sum, p) => sum + ((p.valorTotal || 0) - (p.entrada || 0)), 0)
+  const lucro = totalRecebido - totalEmprestadoReal
 
   const transactions = parcelas
     .filter(p => p.status === 'pago' && p.dataPagamento)

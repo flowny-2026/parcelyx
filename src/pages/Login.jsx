@@ -67,11 +67,7 @@ export default function Login() {
 
   // Verifica em tempo real se digitou "admin" no campo de email
   const handleEmailChange = (e) => {
-    const val = e.target.value
-    setLoginEmail(val)
-    if (val.trim().toLowerCase() === 'admin') {
-      window.location.href = '/admin.html'
-    }
+    setLoginEmail(e.target.value)
   }
 
   const handleStep1 = (e) => {

@@ -4,7 +4,7 @@ import { Check, Clock, AlertTriangle, Upload, X, Image, Loader2 } from 'lucide-r
 import { supabase } from '../lib/supabase'
 
 export default function Parcelas() {
-  const { parcelas, marcarPago, parcelamentos, userData } = useApp()
+  const { parcelas, marcarPago, parcelamentos, userData, loadAllData } = useApp()
   const [filter, setFilter] = useState('pendentes')
   const [showConfirm, setShowConfirm] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -53,7 +53,14 @@ export default function Parcelas() {
 
     if (tipoPagamento === 'parcial' && valorParcial) {
       const valorPago = parseFloat(valorParcial)
-      if (valorPago <= 0) { setUploading(false); return }
+      if (valorPago <= 0 || isNaN(valorPago)) { setUploading(false); return }
+      
+      // Validação: não permitir valor absurdo (máx 10x o valor da parcela)
+      if (valorPago > showConfirm.valor * 10) {
+        alert('Valor informado é muito superior ao valor da parcela. Verifique.')
+        setUploading(false)
+        return
+      }
       
       const valorOriginal = showConfirm.valor
       const diferenca = valorOriginal - valorPago
@@ -65,14 +72,33 @@ export default function Parcelas() {
         return
       }
 
+      // VERIFICAÇÃO DE CONCORRÊNCIA: confirma que a parcela ainda está pendente
+      const { data: parcelaAtual } = await supabase.from('parcelas')
+        .select('status').eq('id', showConfirm.id).single()
+      
+      if (parcelaAtual?.status === 'pago') {
+        alert('Esta parcela já foi paga por outra operação.')
+        setUploading(false)
+        setShowConfirm(null)
+        await loadAllData()
+        return
+      }
+
       // Marca parcela atual como paga com o valor informado
-      await supabase.from('parcelas')
+      const { error: updateError } = await supabase.from('parcelas')
         .update({ 
           status: 'pago', 
           data_pagamento: new Date().toISOString().split('T')[0],
           valor: valorPago
         })
         .eq('id', showConfirm.id)
+        .eq('status', 'pendente') // previne double-pay via condição WHERE
+
+      if (updateError) {
+        alert('Erro ao processar pagamento. Tente novamente.')
+        setUploading(false)
+        return
+      }
 
       // Se pagou menos — cria nova parcela com o restante + juros na data escolhida
       if (diferenca > 0 && proximoVencimento) {
@@ -80,7 +106,7 @@ export default function Parcelas() {
         const juros = contrato?.juros || 0
         const restanteComJuros = Math.round(diferenca * (1 + juros / 100) * 100) / 100
 
-        await supabase.from('parcelas').insert({
+        const { error: insertError } = await supabase.from('parcelas').insert({
           parcelamento_id: showConfirm.parcelamentoId,
           cliente_id: showConfirm.clienteId,
           cliente_nome: showConfirm.clienteNome,
@@ -92,27 +118,49 @@ export default function Parcelas() {
           data_pagamento: null,
           user_id: (await supabase.auth.getUser()).data.user.id
         })
+
+        if (insertError) {
+          // ROLLBACK: desfaz o pagamento se não conseguiu criar a nova parcela
+          await supabase.from('parcelas')
+            .update({ status: 'pendente', data_pagamento: null, valor: valorOriginal })
+            .eq('id', showConfirm.id)
+          alert('Erro ao criar parcela de restante. Pagamento foi revertido.')
+          setUploading(false)
+          await loadAllData()
+          return
+        }
       } else if (diferenca < 0) {
-        // Pagou a mais — abate das próximas
+        // Pagou a mais — abate das próximas parcelas
         const parcelasContrato = parcelas
           .filter(p => p.parcelamentoId === showConfirm.parcelamentoId && p.status !== 'pago' && p.id !== showConfirm.id)
           .sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento))
 
         if (parcelasContrato.length > 0) {
-          const abatePorParcela = Math.abs(diferenca) / parcelasContrato.length
+          const abatePorParcela = Math.round((Math.abs(diferenca) / parcelasContrato.length) * 100) / 100
           for (const p of parcelasContrato) {
-            const novoValor = Math.max(0, p.valor - abatePorParcela)
+            const novoValor = Math.max(0, Math.round((p.valor - abatePorParcela) * 100) / 100)
             await supabase.from('parcelas')
-              .update({ valor: Math.round(novoValor * 100) / 100 })
+              .update({ valor: novoValor })
               .eq('id', p.id)
           }
         }
       }
 
-      // Recarrega
-      await marcarPago(showConfirm.id)
+      // Recarrega todos os dados
+      await loadAllData()
     } else {
-      // Pagamento total
+      // Pagamento total — verifica concorrência
+      const { data: parcelaAtual } = await supabase.from('parcelas')
+        .select('status').eq('id', showConfirm.id).single()
+      
+      if (parcelaAtual?.status === 'pago') {
+        alert('Esta parcela já foi paga.')
+        setUploading(false)
+        setShowConfirm(null)
+        await loadAllData()
+        return
+      }
+
       await marcarPago(showConfirm.id)
     }
 
@@ -122,29 +170,39 @@ export default function Parcelas() {
     setPreviewUrl(null)
     setTipoPagamento('total')
     setValorParcial('')
+    setProximoVencimento('')
   }
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
   }
 
-  // Calcula multa por atraso
+  // Calcula multa por atraso (com limite máximo de 100% do valor original)
   const multaDiaria = userData?.multaDiaria || userData?.multa_diaria || 0
   const calcularValorComMulta = (parcela) => {
     if (parcela.status !== 'atrasado' || !multaDiaria) return parcela.valor
     const venc = new Date(parcela.vencimento + 'T12:00:00')
     const hoje = new Date()
     const diasAtraso = Math.max(0, Math.floor((hoje - venc) / (1000 * 60 * 60 * 24)))
-    return parcela.valor * (1 + (multaDiaria / 100) * diasAtraso)
+    const multaCalculada = (multaDiaria / 100) * diasAtraso
+    const multaFinal = Math.min(multaCalculada, 1.0) // teto de 100% do valor
+    return Math.round(parcela.valor * (1 + multaFinal) * 100) / 100
   }
+
+  const hojeDate = new Date()
+  hojeDate.setHours(0,0,0,0)
 
   const filtered = parcelas.filter(p => {
     if (filter === 'todas') return true
     if (filter === 'pendentes') return p.status === 'pendente' || p.status === 'vence_hoje'
+    if (filter === 'futuras') {
+      const venc = new Date(p.vencimento + 'T12:00:00')
+      return p.status !== 'pago' && venc > hojeDate
+    }
     if (filter === 'pagas') return p.status === 'pago'
     if (filter === 'atrasadas') return p.status === 'atrasado'
     return true
-  })
+  }).sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento))
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -174,6 +232,7 @@ export default function Parcelas() {
   const filters = [
     { key: 'todas', label: 'Todas' },
     { key: 'pendentes', label: 'Pendentes' },
+    { key: 'futuras', label: 'Futuras' },
     { key: 'atrasadas', label: 'Atrasadas' },
     { key: 'pagas', label: 'Pagas' },
   ]
