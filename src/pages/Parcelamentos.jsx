@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { Plus, X, CreditCard, Calendar, Percent as PercentIcon, User, ArrowLeft, Edit3, Trash2 } from 'lucide-react'
+import { Plus, X, CreditCard, Calendar, Percent as PercentIcon, User, ArrowLeft, Edit3, Trash2, RefreshCw } from 'lucide-react'
 
 export default function Parcelamentos() {
   const { parcelamentos, clientes, addParcelamento, editParcelamento, removeParcelamento } = useApp()
@@ -169,6 +169,26 @@ export default function Parcelamentos() {
 
           {/* Ações */}
           <div className="flex flex-col gap-3">
+            <button onClick={() => {
+              // Renovar contrato - preenche o formulário com os dados do contrato atual
+              setForm({
+                clienteId: selectedContrato.clienteId?.toString() || '',
+                valorTotal: selectedContrato.valorTotal?.toString() || '',
+                entrada: '0',
+                parcelas: selectedContrato.parcelas?.toString() || '',
+                juros: selectedContrato.juros?.toString() || '',
+                vencimento: '',
+                observacoes: `Renovação do contrato #${selectedContrato.id}`,
+                parcelasPagas: '',
+                frequencia: selectedContrato.frequencia || 'mensal',
+                formaPagamento: selectedContrato.formaPagamento || 'todos',
+              })
+              setSelectedContrato(null)
+              setShowForm(true)
+            }}
+              className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
+              <RefreshCw className="w-4 h-4" /> Renovar contrato
+            </button>
             <button onClick={() => { setEditMode(true); setEditForm({ valorTotal: selectedContrato.valorTotal, juros: selectedContrato.juros, parcelas: selectedContrato.parcelas, observacoes: selectedContrato.observacoes || '' }) }}
               className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
               <Edit3 className="w-4 h-4" /> Editar contrato

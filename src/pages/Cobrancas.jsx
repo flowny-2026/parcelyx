@@ -1,20 +1,23 @@
 import React, { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { MessageSquare, Send, RefreshCw, CheckCircle, Copy, QrCode } from 'lucide-react'
+import { MessageSquare, Send, RefreshCw, CheckCircle, Copy, QrCode, Zap } from 'lucide-react'
 
 export default function Cobrancas() {
   const { parcelas, clientes, userData } = useApp()
   const [selectedParcela, setSelectedParcela] = useState(null)
   const [showPix, setShowPix] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [enviando, setEnviando] = useState(false)
+  const [enviadosCount, setEnviadosCount] = useState(0)
 
   const parcelasCobraveis = parcelas.filter(p => p.status === 'atrasado' || p.status === 'pendente' || p.status === 'vence_hoje')
+  const parcelasHoje = parcelas.filter(p => p.status === 'vence_hoje')
+  const parcelasAtrasadas = parcelas.filter(p => p.status === 'atrasado')
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
   }
 
-  // Pega a chave PIX salva nas configurações do usuário
   const pixKey = userData?.chavePix || userData?.chave_pix || ''
 
   const gerarMensagemCobranca = (parcela) => {
@@ -42,6 +45,53 @@ export default function Cobrancas() {
     }
   }
 
+  // Cobrança em massa - abre WhatsApp pra cada cliente com intervalo
+  const cobrarEmMassa = (listaParcelas, tipo) => {
+    if (listaParcelas.length === 0) { alert('Nenhuma parcela pra cobrar!'); return }
+    
+    // Agrupa por cliente (não mandar 2x pro mesmo cliente)
+    const porCliente = {}
+    listaParcelas.forEach(p => {
+      if (!porCliente[p.clienteId]) porCliente[p.clienteId] = []
+      porCliente[p.clienteId].push(p)
+    })
+
+    const clienteIds = Object.keys(porCliente)
+    setEnviando(true)
+    setEnviadosCount(0)
+
+    let index = 0
+    const enviarProximo = () => {
+      if (index >= clienteIds.length) {
+        setEnviando(false)
+        alert(`✅ ${clienteIds.length} mensagem(ns) enviada(s)!`)
+        return
+      }
+
+      const clienteId = clienteIds[index]
+      const parcelasCliente = porCliente[clienteId]
+      const parcela = parcelasCliente[0] // pega a primeira parcela desse cliente
+      const mensagem = tipo === 'cobranca' ? gerarMensagemCobranca(parcela) : gerarMensagemLembrete(parcela)
+      
+      enviarWhatsApp(parcela, mensagem)
+      index++
+      setEnviadosCount(index)
+
+      // Intervalo de 2s entre cada envio pra não abrir tudo de uma vez
+      if (index < clienteIds.length) {
+        setTimeout(enviarProximo, 2000)
+      } else {
+        setEnviando(false)
+      }
+    }
+
+    if (confirm(`Enviar cobrança para ${clienteIds.length} cliente(s)?`)) {
+      enviarProximo()
+    } else {
+      setEnviando(false)
+    }
+  }
+
   const copyPix = () => {
     navigator.clipboard.writeText(pixKey)
     setCopied(true)
@@ -53,6 +103,34 @@ export default function Cobrancas() {
       <div>
         <h1 className="text-xl font-bold text-white">Cobranças</h1>
         <p className="text-sm text-gray-400 mt-1">Cobre seus clientes via WhatsApp e PIX</p>
+      </div>
+
+      {/* Cobrança em massa */}
+      <div className="bg-dark-700 rounded-2xl p-4 border border-pix-500/30">
+        <div className="flex items-center gap-3 mb-3">
+          <Zap className="w-5 h-5 text-pix-400" />
+          <h3 className="text-sm font-semibold text-white">Cobrança em massa</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button onClick={() => cobrarEmMassa(parcelasHoje, 'lembrete')} disabled={enviando || parcelasHoje.length === 0}
+            className="flex items-center justify-center gap-2 py-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm font-medium rounded-xl border border-amber-500/20 disabled:opacity-40 transition-all">
+            <Send className="w-4 h-4" />
+            Vence hoje ({parcelasHoje.length})
+          </button>
+          <button onClick={() => cobrarEmMassa(parcelasAtrasadas, 'cobranca')} disabled={enviando || parcelasAtrasadas.length === 0}
+            className="flex items-center justify-center gap-2 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium rounded-xl border border-red-500/20 disabled:opacity-40 transition-all">
+            <Send className="w-4 h-4" />
+            Atrasadas ({parcelasAtrasadas.length})
+          </button>
+          <button onClick={() => cobrarEmMassa([...parcelasHoje, ...parcelasAtrasadas], 'cobranca')} disabled={enviando || (parcelasHoje.length + parcelasAtrasadas.length) === 0}
+            className="flex items-center justify-center gap-2 py-3 bg-pix-500/10 hover:bg-pix-500/20 text-pix-400 text-sm font-medium rounded-xl border border-pix-500/20 disabled:opacity-40 transition-all">
+            <Zap className="w-4 h-4" />
+            Cobrar todos
+          </button>
+        </div>
+        {enviando && (
+          <p className="text-xs text-gray-400 mt-2 text-center">Enviando... {enviadosCount} mensagem(ns)</p>
+        )}
       </div>
 
       {/* Quick actions */}

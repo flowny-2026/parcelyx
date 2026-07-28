@@ -67,7 +67,7 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-xs text-gray-400 ml-6">
-            {parcelasHoje.slice(0, 5).map(p => `${p.clienteNome} (${formatCurrency(p.valor)})`).join(' • ')}
+            {parcelasHoje.slice(0, 5).map(p => `${p.clienteNome} (${formatCurrency(p.valor)}) - Venc: ${new Date(p.vencimento).toLocaleDateString('pt-BR')}`).join(' • ')}
             {parcelasHoje.length > 5 ? ` e mais ${parcelasHoje.length - 5}...` : ''}
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-xs text-gray-400 ml-6">
-            {parcelasAmanha.slice(0, 5).map(p => `${p.clienteNome} (${formatCurrency(p.valor)})`).join(' • ')}
+            {parcelasAmanha.slice(0, 5).map(p => `${p.clienteNome} (${formatCurrency(p.valor)}) - Venc: ${new Date(p.vencimento).toLocaleDateString('pt-BR')}`).join(' • ')}
             {parcelasAmanha.length > 5 ? ` e mais ${parcelasAmanha.length - 5}...` : ''}
           </p>
         </div>
@@ -97,7 +97,7 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-xs text-gray-400 ml-6">
-            {parcelasAtrasadasList.map(p => `${p.clienteNome} (${formatCurrency(p.valor)})`).join(' • ')}
+            {parcelasAtrasadasList.map(p => `${p.clienteNome} (${formatCurrency(p.valor)}) - Venc: ${new Date(p.vencimento).toLocaleDateString('pt-BR')}`).join(' • ')}
             {atrasadas > 5 ? ` e mais ${atrasadas - 5}...` : ''}
           </p>
         </div>

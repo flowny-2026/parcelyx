@@ -4,14 +4,16 @@ import { Check, Clock, AlertTriangle, Upload, X, Image, Loader2 } from 'lucide-r
 import { supabase } from '../lib/supabase'
 
 export default function Parcelas() {
-  const { parcelas, marcarPago } = useApp()
+  const { parcelas, marcarPago, parcelamentos, userData } = useApp()
   const [filter, setFilter] = useState('pendentes')
-  const [showConfirm, setShowConfirm] = useState(null) // parcela selecionada
+  const [showConfirm, setShowConfirm] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [comprovante, setComprovante] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [visivel, setVisivel] = useState(15)
   const [viewComprovante, setViewComprovante] = useState(null)
+  const [tipoPagamento, setTipoPagamento] = useState('total')
+  const [valorParcial, setValorParcial] = useState('')
   const fileInputRef = useRef(null)
 
   const handleFileChange = (e) => {
@@ -41,24 +43,89 @@ export default function Parcelas() {
       }
     }
 
-    // Salva URL do comprovante na parcela ANTES de marcar como pago
+    // Salva URL do comprovante
     if (comprovanteUrl) {
       await supabase.from('parcelas')
         .update({ comprovante_url: comprovanteUrl })
         .eq('id', showConfirm.id)
     }
 
-    // Marca como pago (recarrega dados do contexto)
-    await marcarPago(showConfirm.id)
+    if (tipoPagamento === 'parcial' && valorParcial) {
+      const valorPago = parseFloat(valorParcial)
+      const valorOriginal = showConfirm.valor
+      const diferenca = valorOriginal - valorPago
+
+      // Marca parcela atual como paga com o valor informado
+      await supabase.from('parcelas')
+        .update({ 
+          status: 'pago', 
+          data_pagamento: new Date().toISOString().split('T')[0],
+          valor: valorPago
+        })
+        .eq('id', showConfirm.id)
+
+      // Distribui o restante nas parcelas seguintes
+      if (diferenca > 0) {
+        const parcelasContrato = parcelas
+          .filter(p => p.parcelamentoId === showConfirm.parcelamentoId && p.status !== 'pago' && p.id !== showConfirm.id)
+          .sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento))
+
+        if (parcelasContrato.length > 0) {
+          const contrato = parcelamentos.find(p => p.id === showConfirm.parcelamentoId)
+          const juros = contrato?.juros || 0
+          const restanteComJuros = diferenca * (1 + juros / 100)
+          const acrescimoPorParcela = restanteComJuros / parcelasContrato.length
+
+          for (const p of parcelasContrato) {
+            await supabase.from('parcelas')
+              .update({ valor: Math.round((p.valor + acrescimoPorParcela) * 100) / 100 })
+              .eq('id', p.id)
+          }
+        }
+      } else if (diferenca < 0) {
+        // Pagou a mais — abate das próximas
+        const parcelasContrato = parcelas
+          .filter(p => p.parcelamentoId === showConfirm.parcelamentoId && p.status !== 'pago' && p.id !== showConfirm.id)
+          .sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento))
+
+        if (parcelasContrato.length > 0) {
+          const abatePorParcela = Math.abs(diferenca) / parcelasContrato.length
+          for (const p of parcelasContrato) {
+            const novoValor = Math.max(0, p.valor - abatePorParcela)
+            await supabase.from('parcelas')
+              .update({ valor: Math.round(novoValor * 100) / 100 })
+              .eq('id', p.id)
+          }
+        }
+      }
+
+      // Recarrega
+      await marcarPago(showConfirm.id)
+    } else {
+      // Pagamento total
+      await marcarPago(showConfirm.id)
+    }
 
     setUploading(false)
     setShowConfirm(null)
     setComprovante(null)
     setPreviewUrl(null)
+    setTipoPagamento('total')
+    setValorParcial('')
   }
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+  }
+
+  // Calcula multa por atraso
+  const multaDiaria = userData?.multaDiaria || userData?.multa_diaria || 0
+  const calcularValorComMulta = (parcela) => {
+    if (parcela.status !== 'atrasado' || !multaDiaria) return parcela.valor
+    const venc = new Date(parcela.vencimento + 'T12:00:00')
+    const hoje = new Date()
+    const diasAtraso = Math.max(0, Math.floor((hoje - venc) / (1000 * 60 * 60 * 24)))
+    return parcela.valor * (1 + (multaDiaria / 100) * diasAtraso)
   }
 
   const filtered = parcelas.filter(p => {
@@ -156,7 +223,10 @@ export default function Parcelas() {
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-white">{formatCurrency(parcela.valor)}</p>
+                  <p className="text-sm font-semibold text-white">{formatCurrency(calcularValorComMulta(parcela))}</p>
+                  {parcela.status === 'atrasado' && multaDiaria > 0 && calcularValorComMulta(parcela) > parcela.valor && (
+                    <p className="text-[9px] text-red-400 line-through">{formatCurrency(parcela.valor)}</p>
+                  )}
                   <span className={`inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border ${getStatusStyle(parcela.status)}`}>
                     {getStatusLabel(parcela.status)}
                   </span>
@@ -208,12 +278,12 @@ export default function Parcelas() {
 
       {/* Modal confirmar pagamento */}
       {showConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4" onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null) }}>
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4" onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}>
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
           <div className="relative bg-dark-800 w-full max-w-sm rounded-2xl border border-dark-500/50 animate-fade-in p-5 max-h-[70vh] overflow-y-auto shadow-elevated" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Confirmar pagamento</h3>
-              <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null) }}
+              <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}
                 className="p-1 rounded-lg hover:bg-dark-600 text-gray-400">
                 <X className="w-5 h-5" />
               </button>
@@ -226,6 +296,43 @@ export default function Parcelas() {
                 <span className="text-sm text-gray-400">Parcela {showConfirm.numero}/{showConfirm.totalParcelas}</span>
                 <span className="text-sm font-bold text-pix-400">{formatCurrency(showConfirm.valor)}</span>
               </div>
+            </div>
+
+            {/* Tipo de pagamento */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-300 mb-2">Tipo de pagamento</p>
+              <div className="flex gap-2">
+                <button onClick={() => { setTipoPagamento('total'); setValorParcial('') }}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${tipoPagamento === 'total' ? 'bg-pix-500 text-white' : 'bg-dark-600 text-gray-400 border border-dark-500'}`}>
+                  Total
+                </button>
+                <button onClick={() => setTipoPagamento('parcial')}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${tipoPagamento === 'parcial' ? 'bg-primary-600 text-white' : 'bg-dark-600 text-gray-400 border border-dark-500'}`}>
+                  Parcial
+                </button>
+              </div>
+              {tipoPagamento === 'parcial' && (
+                <div className="mt-3">
+                  <label className="text-xs text-gray-500 mb-1 block">Valor pago pelo cliente</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400 text-sm">R$</span>
+                    <input type="number" step="0.01" value={valorParcial}
+                      onChange={e => setValorParcial(e.target.value)}
+                      placeholder={showConfirm.valor.toString()}
+                      className="flex-1 px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500 text-sm" />
+                  </div>
+                  {valorParcial && parseFloat(valorParcial) < showConfirm.valor && (
+                    <p className="text-xs text-amber-400 mt-2">
+                      Restante de {formatCurrency(showConfirm.valor - parseFloat(valorParcial))} será distribuído nas próximas parcelas com juros.
+                    </p>
+                  )}
+                  {valorParcial && parseFloat(valorParcial) > showConfirm.valor && (
+                    <p className="text-xs text-pix-400 mt-2">
+                      Excedente de {formatCurrency(parseFloat(valorParcial) - showConfirm.valor)} será abatido nas próximas parcelas.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Upload comprovante */}
@@ -256,7 +363,7 @@ export default function Parcelas() {
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 {uploading ? 'Salvando...' : 'Confirmar'}
               </button>
-              <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null) }}
+              <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}
                 className="px-5 py-3.5 border border-dark-500 text-gray-400 rounded-xl hover:bg-dark-700">
                 Cancelar
               </button>

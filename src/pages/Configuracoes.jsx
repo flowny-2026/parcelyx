@@ -14,6 +14,7 @@ export default function Configuracoes() {
     notificacoes: true,
     lembreteAutomatico: true,
     diasAntesLembrete: 3,
+    multaDiaria: '',
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -25,8 +26,9 @@ export default function Configuracoes() {
       nomeEmpresa: userData.negocio || userData.nome || prev.nomeEmpresa,
       telefone: userData.telefone || prev.telefone,
       email: userData.email || prev.email,
-      chavePix: userData.chave_pix || prev.chavePix,
-      tipoChavePix: userData.tipo_chave_pix || prev.tipoChavePix,
+      chavePix: userData.chavePix || userData.chave_pix || prev.chavePix,
+      tipoChavePix: userData.tipoChavePix || userData.tipo_chave_pix || prev.tipoChavePix,
+      multaDiaria: userData.multaDiaria || userData.multa_diaria || prev.multaDiaria,
     }))
   }, [userData])
 
@@ -140,6 +142,28 @@ export default function Configuracoes() {
           </div>
         </div>
 
+        {/* Multa por atraso */}
+        <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 bg-red-500/10 rounded-xl flex items-center justify-center">
+              <span className="text-red-400 text-sm font-bold">%</span>
+            </div>
+            <h3 className="text-base font-semibold text-white">Multa por atraso</h3>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Percentual de multa por dia de atraso</label>
+              <div className="flex items-center gap-2">
+                <input type="number" step="0.1" min="0" max="10" value={config.multaDiaria || ''}
+                  onChange={(e) => setConfig({ ...config, multaDiaria: e.target.value })}
+                  className={inputClass} placeholder="0.5" />
+                <span className="text-gray-400 text-sm">% ao dia</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Ex: 0.5% ao dia = parcela de R$100 com 10 dias de atraso → R$105,00</p>
+            </div>
+          </div>
+        </div>
+
         {/* Importar / Exportar Dados */}
         <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
           <div className="flex items-center gap-3 mb-4">
@@ -249,6 +273,7 @@ export default function Configuracoes() {
             const result = await updateUserData({
               negocio: config.nomeEmpresa, telefone: config.telefone,
               chave_pix: config.chavePix, tipo_chave_pix: config.tipoChavePix,
+              multa_diaria: parseFloat(config.multaDiaria) || 0,
             })
             setSaving(false)
             if (result && !result.error) {

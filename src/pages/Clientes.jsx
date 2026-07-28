@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { Plus, Search, Phone, User, X, ChevronRight, Edit3, Trash2, MessageSquare, ArrowLeft } from 'lucide-react'
+import { Plus, Search, Phone, User, X, ChevronRight, Edit3, Trash2, MessageSquare, ArrowLeft, Check, Clock, AlertTriangle } from 'lucide-react'
 
 export default function Clientes() {
-  const { clientes, addCliente, editCliente, removeCliente } = useApp()
+  const { clientes, addCliente, editCliente, removeCliente, parcelas } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [filtro, setFiltro] = useState('todos')
@@ -12,11 +12,35 @@ export default function Clientes() {
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({})
 
-  const filtered = clientes.filter(c =>
-    c.nome.toLowerCase().includes(search.toLowerCase()) ||
-    c.telefone.includes(search) ||
-    (c.cpf && c.cpf.includes(search))
-  )
+  // Classificação automática de clientes
+  const classificarCliente = (clienteId) => {
+    const parcelasCliente = parcelas?.filter(p => p.clienteId === clienteId) || []
+    if (parcelasCliente.length === 0) return { label: 'Neutro', color: 'bg-gray-500/10 text-gray-400 border-gray-500/20' }
+    
+    const totalParcelas = parcelasCliente.filter(p => p.status === 'pago' || p.status === 'atrasado').length
+    const atrasadas = parcelasCliente.filter(p => p.status === 'atrasado').length
+    
+    if (totalParcelas === 0) return { label: 'Neutro', color: 'bg-gray-500/10 text-gray-400 border-gray-500/20' }
+    
+    const percentualAtraso = (atrasadas / Math.max(totalParcelas, 1)) * 100
+    
+    if (percentualAtraso === 0) return { label: 'Bom pagador', color: 'bg-pix-500/10 text-pix-400 border-pix-500/20' }
+    if (percentualAtraso <= 30) return { label: 'Neutro', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' }
+    return { label: 'Mau pagador', color: 'bg-red-500/10 text-red-400 border-red-500/20' }
+  }
+
+  const filtered = clientes.filter(c => {
+    const matchSearch = c.nome.toLowerCase().includes(search.toLowerCase()) ||
+      c.telefone.includes(search) ||
+      (c.cpf && c.cpf.includes(search))
+    
+    if (!matchSearch) return false
+    if (filtro === 'todos') return true
+    if (filtro === 'bom') return classificarCliente(c.id).label === 'Bom pagador'
+    if (filtro === 'neutro') return classificarCliente(c.id).label === 'Neutro'
+    if (filtro === 'mau') return classificarCliente(c.id).label === 'Mau pagador'
+    return true
+  })
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -62,8 +86,8 @@ export default function Clientes() {
           </div>
           <div className="flex-1">
             <h2 className="text-lg font-bold text-white">{selectedClient.nome}</h2>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-pix-500/10 text-pix-400 border border-pix-500/20 mt-1">
-              ● Bom pagador
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border mt-1 ${classificarCliente(selectedClient.id).color}`}>
+              ● {classificarCliente(selectedClient.id).label}
             </span>
           </div>
           <div className="flex gap-2">
@@ -137,6 +161,76 @@ export default function Clientes() {
         </div>
       )}
 
+      {/* Histórico de parcelas do cliente */}
+      {!editMode && (() => {
+        const parcelasCliente = parcelas?.filter(p => p.clienteId === selectedClient.id) || []
+        const pagas = parcelasCliente.filter(p => p.status === 'pago')
+        const pendentes = parcelasCliente.filter(p => p.status === 'pendente' || p.status === 'vence_hoje')
+        const atrasadasCli = parcelasCliente.filter(p => p.status === 'atrasado')
+        const totalPago = pagas.reduce((s, p) => s + (p.valor || 0), 0)
+        const totalPendente = pendentes.reduce((s, p) => s + (p.valor || 0), 0) + atrasadasCli.reduce((s, p) => s + (p.valor || 0), 0)
+
+        const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
+
+        return (
+          <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
+            <h3 className="text-base font-semibold text-white mb-3">Histórico de parcelas</h3>
+            
+            {/* Resumo */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="text-center p-2 bg-pix-500/10 rounded-lg">
+                <p className="text-lg font-bold text-pix-400">{pagas.length}</p>
+                <p className="text-[10px] text-gray-500">Pagas</p>
+              </div>
+              <div className="text-center p-2 bg-amber-500/10 rounded-lg">
+                <p className="text-lg font-bold text-amber-400">{pendentes.length}</p>
+                <p className="text-[10px] text-gray-500">Pendentes</p>
+              </div>
+              <div className="text-center p-2 bg-red-500/10 rounded-lg">
+                <p className="text-lg font-bold text-red-400">{atrasadasCli.length}</p>
+                <p className="text-[10px] text-gray-500">Atrasadas</p>
+              </div>
+            </div>
+
+            <div className="flex justify-between text-xs text-gray-500 mb-3 pb-2 border-b border-dark-500/30">
+              <span>Total pago: <strong className="text-pix-400">{formatCurrency(totalPago)}</strong></span>
+              <span>A receber: <strong className="text-amber-400">{formatCurrency(totalPendente)}</strong></span>
+            </div>
+
+            {/* Lista de parcelas */}
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {parcelasCliente.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-3">Nenhuma parcela</p>
+              ) : (
+                parcelasCliente.slice(0, 20).map(p => (
+                  <div key={p.id} className="flex items-center justify-between py-2 border-b border-dark-500/20 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        p.status === 'pago' ? 'bg-pix-500/10' : p.status === 'atrasado' ? 'bg-red-500/10' : 'bg-amber-500/10'
+                      }`}>
+                        {p.status === 'pago' ? <Check className="w-3 h-3 text-pix-400" /> :
+                         p.status === 'atrasado' ? <AlertTriangle className="w-3 h-3 text-red-400" /> :
+                         <Clock className="w-3 h-3 text-amber-400" />}
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-300">Parcela {p.numero}/{p.totalParcelas}</p>
+                        <p className="text-[10px] text-gray-500">{new Date(p.vencimento).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-xs font-semibold ${p.status === 'pago' ? 'text-pix-400' : 'text-gray-300'}`}>{formatCurrency(p.valor)}</p>
+                      <p className={`text-[10px] ${
+                        p.status === 'pago' ? 'text-pix-500' : p.status === 'atrasado' ? 'text-red-400' : 'text-amber-400'
+                      }`}>{p.status === 'pago' ? 'Pago' : p.status === 'atrasado' ? 'Atrasado' : 'Pendente'}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Ações */}
       <div className="flex flex-col gap-3">
         <a href={`https://wa.me/55${(selectedClient.telefone || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
@@ -188,9 +282,9 @@ export default function Clientes() {
       <div className="flex flex-wrap gap-2">
         {[
           { key: 'todos', label: 'Todos', count: clientes.length },
-          { key: 'bom', label: 'Bom pagador', count: clientes.length },
-          { key: 'neutro', label: 'Neutro', count: 0 },
-          { key: 'mau', label: 'Mau pagador', count: 0 },
+          { key: 'bom', label: 'Bom pagador', count: clientes.filter(c => classificarCliente(c.id).label === 'Bom pagador').length },
+          { key: 'neutro', label: 'Neutro', count: clientes.filter(c => classificarCliente(c.id).label === 'Neutro').length },
+          { key: 'mau', label: 'Mau pagador', count: clientes.filter(c => classificarCliente(c.id).label === 'Mau pagador').length },
         ].map(f => (
           <button key={f.key} onClick={() => setFiltro(f.key)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
@@ -270,8 +364,8 @@ export default function Clientes() {
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-white truncate">{cliente.nome}</h3>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-pix-500/10 text-pix-400 border border-pix-500/20">
-                    ● Bom pagador
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${classificarCliente(cliente.id).color}`}>
+                    ● {classificarCliente(cliente.id).label}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-1">

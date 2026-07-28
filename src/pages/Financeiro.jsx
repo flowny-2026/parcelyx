@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { TrendingUp, TrendingDown, DollarSign, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, AlertCircle, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { jsPDF } from 'jspdf'
 
 export default function Financeiro() {
-  const { parcelas, getChartData } = useApp()
+  const { parcelas, parcelamentos, clientes, getChartData, userData } = useApp()
   const chartData = getChartData()
   const [periodo, setPeriodo] = useState('mensal')
 
@@ -32,9 +33,112 @@ export default function Financeiro() {
     .sort((a, b) => new Date(b.dataPagamento) - new Date(a.dataPagamento))
     .slice(0, 10)
 
+  const gerarRelatorioPDF = () => {
+    const doc = new jsPDF()
+    const hoje = new Date()
+    const mesAtual = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    const nomeNegocio = userData?.negocio || userData?.nome || 'Parcelyx'
+
+    // Parcelas do mês atual
+    const mesNum = hoje.getMonth()
+    const anoNum = hoje.getFullYear()
+    const parcelasMes = parcelas.filter(p => {
+      const d = new Date(p.vencimento)
+      return d.getMonth() === mesNum && d.getFullYear() === anoNum
+    })
+    const recebidoMes = parcelasMes.filter(p => p.status === 'pago').reduce((s, p) => s + p.valor, 0)
+    const pendenteMes = parcelasMes.filter(p => p.status === 'pendente' || p.status === 'vence_hoje').reduce((s, p) => s + p.valor, 0)
+    const atrasadoMes = parcelasMes.filter(p => p.status === 'atrasado').reduce((s, p) => s + p.valor, 0)
+    const totalEmprestadoMes = parcelamentos.filter(p => {
+      const d = new Date(p.dataCriacao)
+      return d.getMonth() === mesNum && d.getFullYear() === anoNum
+    }).reduce((s, p) => s + (p.valorTotal || 0), 0)
+    const lucroMes = recebidoMes - totalEmprestadoMes
+
+    // Header
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text(nomeNegocio, 20, 25)
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Relatório Financeiro - ${mesAtual}`, 20, 35)
+    doc.text(`Gerado em: ${hoje.toLocaleDateString('pt-BR')} às ${hoje.toLocaleTimeString('pt-BR')}`, 20, 42)
+
+    // Linha separadora
+    doc.setDrawColor(200)
+    doc.line(20, 47, 190, 47)
+
+    // Resumo
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Resumo do Mês', 20, 57)
+
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+    let y = 67
+    const addLine = (label, value, color) => {
+      doc.text(label, 25, y)
+      doc.text(value, 140, y)
+      y += 8
+    }
+
+    addLine('Total emprestado no mês:', formatCurrency(totalEmprestadoMes))
+    addLine('Total recebido no mês:', formatCurrency(recebidoMes))
+    addLine('Pendente no mês:', formatCurrency(pendenteMes))
+    addLine('Em atraso no mês:', formatCurrency(atrasadoMes))
+    y += 4
+    doc.setFont('helvetica', 'bold')
+    addLine('Lucro do mês:', formatCurrency(lucroMes))
+
+    // Resumo geral
+    y += 10
+    doc.setFontSize(14)
+    doc.text('Resumo Geral', 20, y)
+    y += 12
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+    addLine('Total clientes:', `${clientes?.length || 0}`)
+    addLine('Total contratos:', `${parcelamentos?.length || 0}`)
+    addLine('Total recebido (histórico):', formatCurrency(totalRecebido))
+    addLine('Total pendente:', formatCurrency(totalPendente))
+    addLine('Total em atraso:', formatCurrency(totalAtrasado))
+
+    // Últimos pagamentos
+    if (transactions.length > 0) {
+      y += 12
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Últimos Pagamentos Recebidos', 20, y)
+      y += 10
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+
+      transactions.slice(0, 8).forEach(t => {
+        if (y > 270) { doc.addPage(); y = 20 }
+        doc.text(`${t.clienteNome} - Parcela ${t.numero}/${t.totalParcelas}`, 25, y)
+        doc.text(formatCurrency(t.valor), 140, y)
+        doc.text(new Date(t.dataPagamento).toLocaleDateString('pt-BR'), 170, y)
+        y += 7
+      })
+    }
+
+    // Footer
+    doc.setFontSize(8)
+    doc.setTextColor(150)
+    doc.text('Parcelyx - Gestão de Cobranças e Parcelamentos', 20, 285)
+
+    doc.save(`relatorio-${anoNum}-${String(mesNum + 1).padStart(2, '0')}.pdf`)
+  }
+
   return (
     <div className="space-y-5 pb-20 md:pb-0 animate-fade-in">
-      <h1 className="text-xl font-bold text-white">Minhas Finanças</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-white">Minhas Finanças</h1>
+        <button onClick={gerarRelatorioPDF}
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-all">
+          <FileText className="w-4 h-4" /> Relatório PDF
+        </button>
+      </div>
 
       {/* Card principal - Recebido x Emprestado */}
       <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">

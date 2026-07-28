@@ -12,6 +12,7 @@ import Cobrancas from './pages/Cobrancas'
 import Financeiro from './pages/Financeiro'
 import Configuracoes from './pages/Configuracoes'
 import Pagamentos from './pages/Pagamentos'
+import Agenda from './pages/Agenda'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="parcelas" element={<Parcelas />} />
             <Route path="cobrancas" element={<Cobrancas />} />
             <Route path="financeiro" element={<Financeiro />} />
+            <Route path="agenda" element={<Agenda />} />
             <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="pagamentos" element={<Pagamentos />} />
           </Route>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { Outlet, NavLink, useLocation, Navigate } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, Navigate, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, CreditCard, Receipt,
-  MessageSquare, PieChart, Settings, Menu, X, LogOut, Bell, AlertTriangle, Clock
+  MessageSquare, PieChart, Settings, Menu, X, LogOut, Bell, AlertTriangle, Clock, Search, CalendarDays
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
@@ -13,14 +13,18 @@ const navItems = [
   { path: '/parcelas', icon: Receipt, label: 'Parcelas' },
   { path: '/cobrancas', icon: MessageSquare, label: 'Cobranças' },
   { path: '/financeiro', icon: PieChart, label: 'Financeiro' },
+  { path: '/agenda', icon: CalendarDays, label: 'Agenda' },
   { path: '/configuracoes', icon: Settings, label: 'Configurações' },
 ]
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showAlerts, setShowAlerts] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const location = useLocation()
-  const { isAuthenticated, logout, userData, parcelas } = useApp()
+  const navigate = useNavigate()
+  const { isAuthenticated, logout, userData, parcelas, clientes, parcelamentos } = useApp()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -82,6 +86,13 @@ export default function Layout() {
   const atrasadas = parcelas?.filter(p => p.status === 'atrasado') || []
   const venceHoje = parcelas?.filter(p => p.status === 'vence_hoje') || []
   const totalAlertas = atrasadas.length + venceHoje.length
+
+  // Busca global
+  const searchResults = searchQuery.length >= 2 ? {
+    clientes: (clientes || []).filter(c => c.nome?.toLowerCase().includes(searchQuery.toLowerCase()) || c.telefone?.includes(searchQuery)).slice(0, 5),
+    contratos: (parcelamentos || []).filter(p => p.clienteNome?.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5),
+    parcelas: (parcelas || []).filter(p => p.clienteNome?.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5),
+  } : null
 
   return (
     <div className="min-h-screen bg-dark-900 flex">
@@ -224,8 +235,11 @@ export default function Layout() {
                 }}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowAlerts(!showAlerts)} className="p-2 rounded-lg hover:bg-dark-600 relative">
+            <div className="flex items-center gap-1">
+              <button onClick={() => { setShowSearch(!showSearch); setShowAlerts(false) }} className="p-2 rounded-lg hover:bg-dark-600">
+                <Search className="w-5 h-5 text-gray-400" />
+              </button>
+              <button onClick={() => { setShowAlerts(!showAlerts); setShowSearch(false) }} className="p-2 rounded-lg hover:bg-dark-600 relative">
                 <Bell className="w-5 h-5 text-gray-400" />
                 {totalAlertas > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
@@ -274,6 +288,64 @@ export default function Layout() {
                   </>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Painel de busca global */}
+        {showSearch && (
+          <div className="md:hidden fixed inset-0 z-[90]" onClick={() => { setShowSearch(false); setSearchQuery('') }}>
+            <div className="fixed inset-0 bg-black/50" />
+            <div className="absolute top-14 right-2 left-2 bg-dark-800 rounded-2xl border border-dark-500/50 shadow-elevated animate-fade-in max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="p-3 border-b border-dark-500/50">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Buscar cliente, contrato..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-dark-700 rounded-xl border border-dark-500 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-primary-500"
+                    autoFocus />
+                </div>
+              </div>
+              {searchResults && (
+                <div className="p-3 space-y-3">
+                  {searchResults.clientes.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold mb-2">CLIENTES</p>
+                      {searchResults.clientes.map(c => (
+                        <button key={c.id} onClick={() => { navigate('/clientes'); setShowSearch(false); setSearchQuery('') }}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 text-left">
+                          <Users className="w-4 h-4 text-primary-400" />
+                          <div>
+                            <p className="text-sm text-gray-200">{c.nome}</p>
+                            <p className="text-xs text-gray-500">{c.telefone}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {searchResults.contratos.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold mb-2">CONTRATOS</p>
+                      {searchResults.contratos.map(p => (
+                        <button key={p.id} onClick={() => { navigate('/parcelamentos'); setShowSearch(false); setSearchQuery('') }}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 text-left">
+                          <CreditCard className="w-4 h-4 text-pix-400" />
+                          <div>
+                            <p className="text-sm text-gray-200">{p.clienteNome}</p>
+                            <p className="text-xs text-gray-500">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(p.valorTotal)}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {searchResults.clientes.length === 0 && searchResults.contratos.length === 0 && searchResults.parcelas.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">Nenhum resultado para "{searchQuery}"</p>
+                  )}
+                </div>
+              )}
+              {!searchResults && (
+                <p className="text-sm text-gray-500 text-center py-6">Digite pelo menos 2 caracteres</p>
+              )}
             </div>
           </div>
         )}
