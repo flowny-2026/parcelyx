@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import { Plus, X, CreditCard, Calendar, Percent as PercentIcon, User, ArrowLeft, Edit3, Trash2, RefreshCw } from 'lucide-react'
 
 export default function Parcelamentos() {
-  const { parcelamentos, clientes, addParcelamento, editParcelamento, removeParcelamento } = useApp()
+  const { parcelamentos, clientes, parcelas, addParcelamento, editParcelamento, removeParcelamento } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     clienteId: '', valorTotal: '', entrada: '', parcelas: '', juros: '', vencimento: '', observacoes: '', parcelasPagas: '', frequencia: 'mensal', formaPagamento: 'todos'
@@ -54,7 +54,18 @@ export default function Parcelamentos() {
   const inputClass = "w-full px-4 py-3 rounded-xl bg-dark-700 border border-dark-500 focus:border-pix-500 focus:ring-2 focus:ring-pix-500/20 outline-none text-sm text-gray-200 placeholder-gray-500"
 
   const handleDelete = (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este contrato?')) {
+    // Calcula valor pendente do contrato
+    const parcelasContrato = parcelas?.filter(p => p.parcelamentoId === id) || []
+    const pendentes = parcelasContrato.filter(p => p.status !== 'pago')
+    const valorPendente = pendentes.reduce((s, p) => s + (p.valor || 0), 0)
+    const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
+    
+    let msg = 'Tem certeza que deseja excluir este contrato?'
+    if (pendentes.length > 0) {
+      msg = `⚠️ Este contrato possui ${pendentes.length} parcela(s) pendente(s) totalizando ${formatCurrency(valorPendente)}.\n\nTem certeza que deseja excluir? Esta ação não pode ser desfeita.`
+    }
+    
+    if (window.confirm(msg)) {
       removeParcelamento(id)
       setSelectedContrato(null)
     }

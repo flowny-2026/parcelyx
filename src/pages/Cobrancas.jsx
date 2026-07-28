@@ -9,6 +9,10 @@ export default function Cobrancas() {
   const [copied, setCopied] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [enviadosCount, setEnviadosCount] = useState(0)
+  const [logCobrancas, setLogCobrancas] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('parcelyx_log_cobrancas') || '{}') }
+    catch { return {} }
+  })
 
   const parcelasCobraveis = parcelas.filter(p => p.status === 'atrasado' || p.status === 'pendente' || p.status === 'vence_hoje')
   const parcelasHoje = parcelas.filter(p => p.status === 'vence_hoje')
@@ -42,16 +46,37 @@ export default function Cobrancas() {
       const phone = '55' + cliente.telefone.replace(/\D/g, '')
       const url = `https://wa.me/${phone}?text=${encodeURIComponent(mensagem)}`
       window.open(url, '_blank')
+      
+      // Registra no log local
+      const novoLog = { ...logCobrancas, [parcela.id]: new Date().toISOString() }
+      setLogCobrancas(novoLog)
+      localStorage.setItem('parcelyx_log_cobrancas', JSON.stringify(novoLog))
     }
+  }
+
+  // Verifica se parcela foi cobrada recentemente (últimas 4 horas)
+  const foiCobradaRecente = (parcelaId) => {
+    const ultimo = logCobrancas[parcelaId]
+    if (!ultimo) return false
+    const diff = Date.now() - new Date(ultimo).getTime()
+    return diff < 4 * 60 * 60 * 1000 // 4 horas
   }
 
   // Cobrança em massa - abre WhatsApp pra cada cliente com intervalo
   const cobrarEmMassa = (listaParcelas, tipo) => {
     if (listaParcelas.length === 0) { alert('Nenhuma parcela pra cobrar!'); return }
     
+    // Filtra parcelas cobradas recentemente
+    const parcelasNaoCobradas = listaParcelas.filter(p => !foiCobradaRecente(p.id))
+    
+    if (parcelasNaoCobradas.length === 0) {
+      alert('Todas as parcelas já foram cobradas nas últimas 4 horas.')
+      return
+    }
+
     // Agrupa por cliente (não mandar 2x pro mesmo cliente)
     const porCliente = {}
-    listaParcelas.forEach(p => {
+    parcelasNaoCobradas.forEach(p => {
       if (!porCliente[p.clienteId]) porCliente[p.clienteId] = []
       porCliente[p.clienteId].push(p)
     })
@@ -167,6 +192,9 @@ export default function Cobrancas() {
                   <p className="text-xs text-gray-500">
                     Venc: {new Date(parcela.vencimento).toLocaleDateString('pt-BR')}
                   </p>
+                  {foiCobradaRecente(parcela.id) && (
+                    <p className="text-[10px] text-pix-400 mt-0.5">✓ Cobrada às {new Date(logCobrancas[parcela.id]).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</p>
+                  )}
                 </div>
                 <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full border ${
                   parcela.status === 'atrasado' ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'

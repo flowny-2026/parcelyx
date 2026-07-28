@@ -20,6 +20,19 @@ export default function Parcelas() {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    // Validação: máximo 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Arquivo muito grande. Máximo permitido: 5MB.')
+      e.target.value = ''
+      return
+    }
+    // Validação: apenas imagens e PDF
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf']
+    if (!tiposPermitidos.includes(file.type) && !file.type.startsWith('image/')) {
+      alert('Formato não suportado. Use JPG, PNG, WebP ou PDF.')
+      e.target.value = ''
+      return
+    }
     setComprovante(file)
     setPreviewUrl(URL.createObjectURL(file))
   }
@@ -256,65 +269,75 @@ export default function Parcelas() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-dark-700 rounded-xl p-3 border border-dark-500/50 text-center">
-          <p className="text-lg font-bold text-amber-400">{parcelas.filter(p => p.status === 'pendente' || p.status === 'vence_hoje').length}</p>
-          <p className="text-xs text-gray-500">Pendentes</p>
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
+        <div className="bg-dark-700 rounded-xl p-2 md:p-3 border border-dark-500/50 text-center">
+          <p className="text-base md:text-lg font-bold text-amber-400">{parcelas.filter(p => p.status === 'pendente' || p.status === 'vence_hoje').length}</p>
+          <p className="text-[10px] md:text-xs text-gray-500">Pendentes</p>
         </div>
-        <div className="bg-dark-700 rounded-xl p-3 border border-dark-500/50 text-center">
-          <p className="text-lg font-bold text-red-400">{parcelas.filter(p => p.status === 'atrasado').length}</p>
-          <p className="text-xs text-gray-500">Atrasadas</p>
+        <div className="bg-dark-700 rounded-xl p-2 md:p-3 border border-dark-500/50 text-center">
+          <p className="text-base md:text-lg font-bold text-red-400">{parcelas.filter(p => p.status === 'atrasado').length}</p>
+          <p className="text-[10px] md:text-xs text-gray-500">Atrasadas</p>
         </div>
-        <div className="bg-dark-700 rounded-xl p-3 border border-dark-500/50 text-center">
-          <p className="text-lg font-bold text-pix-400">{parcelas.filter(p => p.status === 'pago').length}</p>
-          <p className="text-xs text-gray-500">Pagas</p>
+        <div className="bg-dark-700 rounded-xl p-2 md:p-3 border border-dark-500/50 text-center">
+          <p className="text-base md:text-lg font-bold text-pix-400">{parcelas.filter(p => p.status === 'pago').length}</p>
+          <p className="text-[10px] md:text-xs text-gray-500">Pagas</p>
         </div>
       </div>
 
       {/* Parcelas list */}
       <div className="space-y-2">
         {filtered.slice(0, visivel).map(parcela => (
-          <div key={parcela.id} className="bg-dark-700 rounded-2xl p-4 border border-dark-500/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  parcela.status === 'pago' ? 'bg-pix-500/10' :
-                  parcela.status === 'atrasado' ? 'bg-red-500/10' : 'bg-amber-500/10'
-                }`}>
-                  {getStatusIcon(parcela.status)}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-200 truncate">{parcela.clienteNome}</p>
-                  <p className="text-xs text-gray-500">
-                    Parcela {parcela.numero}/{parcela.totalParcelas} • Venc: {new Date(parcela.vencimento).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
+          <div key={parcela.id} className="bg-dark-700 rounded-2xl p-3 md:p-4 border border-dark-500/50">
+            <div className="flex items-start gap-3">
+              {/* Ícone status */}
+              <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                parcela.status === 'pago' ? 'bg-pix-500/10' :
+                parcela.status === 'atrasado' ? 'bg-red-500/10' : 'bg-amber-500/10'
+              }`}>
+                {getStatusIcon(parcela.status)}
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-white">{formatCurrency(calcularValorComMulta(parcela))}</p>
-                  {parcela.status === 'atrasado' && multaDiaria > 0 && calcularValorComMulta(parcela) > parcela.valor && (
-                    <p className="text-[9px] text-red-400 line-through">{formatCurrency(parcela.valor)}</p>
-                  )}
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-200 truncate">{parcela.clienteNome}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Parcela {parcela.numero}/{parcela.totalParcelas} • {new Date(parcela.vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-semibold text-white">{formatCurrency(calcularValorComMulta(parcela))}</p>
+                    {parcela.status === 'atrasado' && multaDiaria > 0 && calcularValorComMulta(parcela) > parcela.valor && (
+                      <p className="text-[9px] text-red-400 line-through">{formatCurrency(parcela.valor)}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status badge + ações */}
+                <div className="flex items-center justify-between mt-2">
                   <span className={`inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border ${getStatusStyle(parcela.status)}`}>
                     {getStatusLabel(parcela.status)}
                   </span>
+                  <div className="flex items-center gap-2">
+                    {parcela.status !== 'pago' && (
+                      <button onClick={() => setShowConfirm(parcela)}
+                        className="p-1.5 md:p-2 bg-pix-500/10 hover:bg-pix-500/20 rounded-lg transition-colors border border-pix-500/20"
+                        title="Marcar como pago">
+                        <Check className="w-4 h-4 text-pix-400" />
+                      </button>
+                    )}
+                    {parcela.status === 'pago' && (parcela.comprovanteUrl || parcela.comprovante_url) && (
+                      <button onClick={() => setViewComprovante(parcela.comprovanteUrl || parcela.comprovante_url)}
+                        className="p-1.5 md:p-2 bg-primary-500/10 hover:bg-primary-500/20 rounded-lg transition-colors border border-primary-500/20"
+                        title="Ver comprovante">
+                        <Image className="w-4 h-4 text-primary-400" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {parcela.status !== 'pago' && (
-                  <button onClick={() => setShowConfirm(parcela)}
-                    className="p-2 bg-pix-500/10 hover:bg-pix-500/20 rounded-lg transition-colors border border-pix-500/20"
-                    title="Marcar como pago">
-                    <Check className="w-4 h-4 text-pix-400" />
-                  </button>
-                )}
-                {parcela.status === 'pago' && (parcela.comprovanteUrl || parcela.comprovante_url) && (
-                  <button onClick={() => setViewComprovante(parcela.comprovanteUrl || parcela.comprovante_url)}
-                    className="p-2 bg-primary-500/10 hover:bg-primary-500/20 rounded-lg transition-colors border border-primary-500/20"
-                    title="Ver comprovante">
-                    <Image className="w-4 h-4 text-primary-400" />
-                  </button>
-                )}
               </div>
+            </div>
             </div>
           </div>
         ))}

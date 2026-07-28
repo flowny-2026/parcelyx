@@ -213,12 +213,32 @@ export async function deleteParcelamento(id) {
 // ====== PARCELAS ======
 
 export async function getParcelas() {
+  // Carrega parcelas dos últimos 3 meses e próximos 6 meses (janela de 9 meses)
+  const hoje = new Date()
+  const inicio = new Date(hoje)
+  inicio.setMonth(inicio.getMonth() - 3)
+  const fim = new Date(hoje)
+  fim.setMonth(fim.getMonth() + 6)
+  
   const { data, error } = await supabase
     .from('parcelas')
     .select('*')
+    .gte('vencimento', inicio.toISOString().split('T')[0])
+    .lte('vencimento', fim.toISOString().split('T')[0])
     .order('vencimento', { ascending: true })
+    .limit(2000)
   
-  return { data: data ? mapKeys(data, toCamel) : data, error }
+  // Também carrega parcelas atrasadas fora da janela (vencidas antes de 3 meses)
+  const { data: atrasadas, error: errAtrasadas } = await supabase
+    .from('parcelas')
+    .select('*')
+    .lt('vencimento', inicio.toISOString().split('T')[0])
+    .neq('status', 'pago')
+    .order('vencimento', { ascending: true })
+    .limit(500)
+  
+  const todas = [...(atrasadas || []), ...(data || [])]
+  return { data: todas.length > 0 ? mapKeys(todas, toCamel) : data ? mapKeys(data, toCamel) : [], error: error || errAtrasadas }
 }
 
 export async function marcarParcelaPaga(id) {

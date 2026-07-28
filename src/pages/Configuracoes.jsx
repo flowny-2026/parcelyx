@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import { Building, CreditCard, Bell, Download, Upload, Database } from 'lucide-react'
 
 export default function Configuracoes() {
-  const { userData, updateUserData, clientes, parcelamentos, parcelas } = useApp()
+  const { userData, updateUserData, clientes, parcelamentos, parcelas, addCliente, loadAllData } = useApp()
   const fileInputRef = useRef(null)
   const [config, setConfig] = useState({
     nomeEmpresa: 'Meu Negócio',
@@ -224,14 +224,46 @@ export default function Configuracoes() {
 
               if (ext === 'json') {
                 const reader = new FileReader()
-                reader.onload = (ev) => {
+                reader.onload = async (ev) => {
                   try {
                     const dados = JSON.parse(ev.target.result)
-                    if (dados.clientes || dados.parcelamentos) {
-                      setMessage(`✅ JSON carregado: ${dados.clientes?.length || 0} clientes, ${dados.parcelamentos?.length || 0} contratos.`)
-                    } else {
+                    if (!dados.clientes && !dados.parcelamentos) {
                       setMessage('⚠️ JSON inválido. Use um backup gerado pelo Parcelyx.')
+                      return
                     }
+
+                    const totalClientes = dados.clientes?.length || 0
+                    if (totalClientes === 0) {
+                      setMessage('⚠️ Nenhum cliente encontrado no arquivo.')
+                      return
+                    }
+
+                    if (!confirm(`Importar ${totalClientes} cliente(s)? Clientes duplicados (mesmo nome+telefone) serão ignorados.`)) return
+
+                    setMessage('⏳ Importando...')
+                    let importados = 0
+                    let ignorados = 0
+
+                    for (const c of dados.clientes) {
+                      // Verifica se já existe (mesmo nome e telefone)
+                      const jaExiste = clientes.some(
+                        existente => existente.nome?.toLowerCase() === c.nome?.toLowerCase() && existente.telefone === c.telefone
+                      )
+                      if (jaExiste) { ignorados++; continue }
+
+                      const result = await addCliente({
+                        nome: c.nome || 'Sem nome',
+                        telefone: c.telefone || '',
+                        cpf: c.cpf || '',
+                        endereco: c.endereco || '',
+                        observacoes: c.observacoes || ''
+                      })
+                      if (result.success) importados++
+                      else ignorados++
+                    }
+
+                    await loadAllData()
+                    setMessage(`✅ Importação concluída: ${importados} importado(s), ${ignorados} ignorado(s).`)
                   } catch (err) {
                     setMessage('❌ Erro ao ler JSON. Verifique o formato.')
                   }
