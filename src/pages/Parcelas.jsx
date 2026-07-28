@@ -14,6 +14,7 @@ export default function Parcelas() {
   const [viewComprovante, setViewComprovante] = useState(null)
   const [tipoPagamento, setTipoPagamento] = useState('total')
   const [valorParcial, setValorParcial] = useState('')
+  const [proximoVencimento, setProximoVencimento] = useState('')
   const fileInputRef = useRef(null)
 
   const handleFileChange = (e) => {
@@ -52,8 +53,17 @@ export default function Parcelas() {
 
     if (tipoPagamento === 'parcial' && valorParcial) {
       const valorPago = parseFloat(valorParcial)
+      if (valorPago <= 0) { setUploading(false); return }
+      
       const valorOriginal = showConfirm.valor
       const diferenca = valorOriginal - valorPago
+
+      // Se pagou menos e não escolheu data, avisa
+      if (diferenca > 0 && !proximoVencimento) {
+        alert('Selecione a data do próximo vencimento para o valor restante.')
+        setUploading(false)
+        return
+      }
 
       // Marca parcela atual como paga com o valor informado
       await supabase.from('parcelas')
@@ -64,24 +74,24 @@ export default function Parcelas() {
         })
         .eq('id', showConfirm.id)
 
-      // Distribui o restante nas parcelas seguintes
-      if (diferenca > 0) {
-        const parcelasContrato = parcelas
-          .filter(p => p.parcelamentoId === showConfirm.parcelamentoId && p.status !== 'pago' && p.id !== showConfirm.id)
-          .sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento))
+      // Se pagou menos — cria nova parcela com o restante + juros na data escolhida
+      if (diferenca > 0 && proximoVencimento) {
+        const contrato = parcelamentos.find(p => p.id === showConfirm.parcelamentoId)
+        const juros = contrato?.juros || 0
+        const restanteComJuros = Math.round(diferenca * (1 + juros / 100) * 100) / 100
 
-        if (parcelasContrato.length > 0) {
-          const contrato = parcelamentos.find(p => p.id === showConfirm.parcelamentoId)
-          const juros = contrato?.juros || 0
-          const restanteComJuros = diferenca * (1 + juros / 100)
-          const acrescimoPorParcela = restanteComJuros / parcelasContrato.length
-
-          for (const p of parcelasContrato) {
-            await supabase.from('parcelas')
-              .update({ valor: Math.round((p.valor + acrescimoPorParcela) * 100) / 100 })
-              .eq('id', p.id)
-          }
-        }
+        await supabase.from('parcelas').insert({
+          parcelamento_id: showConfirm.parcelamentoId,
+          cliente_id: showConfirm.clienteId,
+          cliente_nome: showConfirm.clienteNome,
+          numero: showConfirm.totalParcelas + 1,
+          total_parcelas: showConfirm.totalParcelas + 1,
+          valor: restanteComJuros,
+          vencimento: proximoVencimento,
+          status: 'pendente',
+          data_pagamento: null,
+          user_id: (await supabase.auth.getUser()).data.user.id
+        })
       } else if (diferenca < 0) {
         // Pagou a mais — abate das próximas
         const parcelasContrato = parcelas
@@ -312,22 +322,34 @@ export default function Parcelas() {
                 </button>
               </div>
               {tipoPagamento === 'parcial' && (
-                <div className="mt-3">
-                  <label className="text-xs text-gray-500 mb-1 block">Valor pago pelo cliente</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-400 text-sm">R$</span>
-                    <input type="number" step="0.01" value={valorParcial}
-                      onChange={e => setValorParcial(e.target.value)}
-                      placeholder={showConfirm.valor.toString()}
-                      className="flex-1 px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500 text-sm" />
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Valor pago pelo cliente</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">R$</span>
+                      <input type="number" step="0.01" value={valorParcial}
+                        onChange={e => setValorParcial(e.target.value)}
+                        placeholder={showConfirm.valor.toString()}
+                        className="flex-1 px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500 text-sm" />
+                    </div>
                   </div>
                   {valorParcial && parseFloat(valorParcial) < showConfirm.valor && (
-                    <p className="text-xs text-amber-400 mt-2">
-                      Restante de {formatCurrency(showConfirm.valor - parseFloat(valorParcial))} será distribuído nas próximas parcelas com juros.
-                    </p>
+                    <>
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                        <p className="text-xs text-amber-400">
+                          Restante: {formatCurrency(showConfirm.valor - parseFloat(valorParcial))} — será renovado como nova parcela com juros.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">Próximo vencimento do restante</label>
+                        <input type="date" value={proximoVencimento}
+                          onChange={e => setProximoVencimento(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500 text-sm" />
+                      </div>
+                    </>
                   )}
                   {valorParcial && parseFloat(valorParcial) > showConfirm.valor && (
-                    <p className="text-xs text-pix-400 mt-2">
+                    <p className="text-xs text-pix-400">
                       Excedente de {formatCurrency(parseFloat(valorParcial) - showConfirm.valor)} será abatido nas próximas parcelas.
                     </p>
                   )}
