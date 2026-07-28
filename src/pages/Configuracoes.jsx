@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { Building, CreditCard, Bell, Download, Upload, Database } from 'lucide-react'
+import { Building, CreditCard, Bell, Download, Upload, Database, X } from 'lucide-react'
 
 export default function Configuracoes() {
   const { userData, updateUserData, clientes, parcelamentos, parcelas } = useApp()
@@ -18,6 +18,7 @@ export default function Configuracoes() {
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [showChangelog, setShowChangelog] = useState(false)
 
   useEffect(() => {
     if (!userData) return
@@ -289,9 +290,133 @@ export default function Configuracoes() {
         {message && <p className="text-center text-sm text-gray-400 mt-3">{message}</p>}
 
         <p className="text-center text-xs text-gray-600 pt-4">
-          Parcelyx v1.0.0 • © 2026 Todos os direitos reservados
+          Parcelyx v2.0.0 • © 2026 Todos os direitos reservados
         </p>
+        <button onClick={() => setShowChangelog(true)}
+          className="w-full mt-3 py-2.5 bg-dark-600 hover:bg-dark-500 text-gray-300 text-sm font-medium rounded-xl border border-dark-500/50 transition-all">
+          🆕 Ver novidades da atualização
+        </button>
       </div>
+
+      {/* Modal Changelog */}
+      {showChangelog && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-10 px-4" onClick={() => setShowChangelog(false)}>
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+          <div className="relative bg-dark-800 w-full max-w-md rounded-2xl border border-dark-500/50 shadow-elevated max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-dark-800 p-5 pb-3 border-b border-dark-500/50 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-white">🚀 Novidades v2.0</h2>
+                <button onClick={() => setShowChangelog(false)} className="p-1 rounded-lg hover:bg-dark-600 text-gray-400">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Julho 2026</p>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <span className="text-lg">🎨</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Novo design dark</p>
+                    <p className="text-xs text-gray-400">Interface moderna com tema escuro, cards vibrantes e navegação otimizada para mobile.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">📅</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Agenda / Calendário</p>
+                    <p className="text-xs text-gray-400">Visualize todos os vencimentos do mês em um calendário interativo.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">⚡</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Cobrança em massa</p>
+                    <p className="text-xs text-gray-400">Envie cobrança via WhatsApp para todos os clientes com parcelas vencendo hoje ou atrasadas com 1 clique.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">💰</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Pagamento parcial</p>
+                    <p className="text-xs text-gray-400">Registre pagamentos com valor diferente. O restante é redistribuído nas próximas parcelas com juros.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">📎</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Comprovante de pagamento</p>
+                    <p className="text-xs text-gray-400">Anexe foto do comprovante ao confirmar pagamento. Visualize depois na lista de parcelas pagas.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">📊</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Relatório PDF</p>
+                    <p className="text-xs text-gray-400">Gere um resumo financeiro mensal em PDF com empréstimos, recebimentos e lucro.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">🏷️</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Classificação automática</p>
+                    <p className="text-xs text-gray-400">Clientes são classificados como Bom pagador, Neutro ou Mau pagador baseado no histórico.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">💸</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Multa por atraso</p>
+                    <p className="text-xs text-gray-400">Configure % de multa por dia de atraso. O valor é calculado automaticamente na lista de parcelas.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">🔄</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Renovar contrato</p>
+                    <p className="text-xs text-gray-400">Renove um contrato com 1 clique — preenche tudo automaticamente pro mesmo cliente.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">📱</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Frequência flexível</p>
+                    <p className="text-xs text-gray-400">Parcelas diárias, semanais, quinzenais ou mensais. Com opção de dias úteis.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">🔍</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Busca global</p>
+                    <p className="text-xs text-gray-400">Encontre clientes e contratos rapidamente pelo ícone de busca no topo.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">🔔</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Alertas inteligentes</p>
+                    <p className="text-xs text-gray-400">Notificações de parcelas vencendo hoje, amanhã e atrasadas direto no Dashboard e no sino.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">💼</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Capital disponível</p>
+                    <p className="text-xs text-gray-400">Acompanhe quanto tem disponível para emprestar com cálculo automático.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-lg">📤</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Importar / Exportar</p>
+                    <p className="text-xs text-gray-400">Exporte dados em JSON ou CSV. Importe de JSON, CSV ou TXT.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
