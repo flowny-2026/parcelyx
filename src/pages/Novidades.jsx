@@ -20,7 +20,6 @@ export default function Novidades() {
     { icon: '🔔', title: 'Alertas inteligentes', desc: 'Notificações de parcelas vencendo hoje, amanhã e atrasadas direto no Dashboard e no sino.' },
     { icon: '💼', title: 'Capital disponível', desc: 'Acompanhe quanto tem disponível para emprestar com cálculo automático.' },
     { icon: '📤', title: 'Importar / Exportar', desc: 'Exporte dados em JSON ou CSV. Importe de JSON, CSV ou TXT.' },
-    { icon: '🔒', title: 'Controle de plano', desc: 'Alerta quando o plano está pra vencer e bloqueio automático ao expirar.' },
   ]
 
   return (
