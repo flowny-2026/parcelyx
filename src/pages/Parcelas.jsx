@@ -78,9 +78,14 @@ export default function Parcelas() {
       const valorOriginal = showConfirm.valor
       const diferenca = valorOriginal - valorPago
 
-      // Se pagou menos e não escolheu data, avisa
-      if (diferenca > 0 && !proximoVencimento) {
-        alert('Selecione a data do próximo vencimento para o valor restante.')
+      // Se pagou menos e não há parcelas pendentes e não escolheu data, avisa
+      const parcelasPendentesContrato = parcelas.filter(p =>
+        p.parcelamentoId === showConfirm.parcelamentoId &&
+        p.status !== 'pago' &&
+        p.id !== showConfirm.id
+      )
+      if (diferenca > 0 && parcelasPendentesContrato.length === 0 && !proximoVencimento) {
+        alert('Não há parcelas pendentes no contrato. Selecione a data do próximo vencimento para o valor restante.')
         setUploading(false)
         return
       }
@@ -113,38 +118,71 @@ export default function Parcelas() {
         return
       }
 
-      // Se pagou menos — cria nova parcela com o restante + juros na data escolhida
-      if (diferenca > 0 && proximoVencimento) {
+      // Se pagou menos — redistribui o restante + juros nas parcelas pendentes existentes
+      if (diferenca > 0) {
         const contrato = parcelamentos.find(p => p.id === showConfirm.parcelamentoId)
         const juros = contrato?.juros || 0
-        const restanteComJuros = Math.round(diferenca * (1 + juros / 100) * 100) / 100
 
-        const { error: insertError } = await supabase.from('parcelas').insert({
-          parcelamento_id: showConfirm.parcelamentoId,
-          cliente_id: showConfirm.clienteId,
-          cliente_nome: showConfirm.clienteNome,
-          numero: showConfirm.totalParcelas + 1,
-          total_parcelas: showConfirm.totalParcelas + 1,
-          valor: restanteComJuros,
-          vencimento: proximoVencimento,
-          status: 'pendente',
-          data_pagamento: null,
-          user_id: (await supabase.auth.getUser()).data.user.id
-        })
+        // Busca as parcelas pendentes do contrato (exceto a atual, já paga)
+        const parcelasPendentes = parcelas
+          .filter(p =>
+            p.parcelamentoId === showConfirm.parcelamentoId &&
+            p.status !== 'pago' &&
+            p.id !== showConfirm.id
+          )
+          .sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento))
 
-        if (insertError) {
-          // ROLLBACK: desfaz o pagamento se não conseguiu criar a nova parcela
-          await supabase.from('parcelas')
-            .update({ status: 'pendente', data_pagamento: null, valor: valorOriginal })
-            .eq('id', showConfirm.id)
-          alert('Erro ao criar parcela de restante. Pagamento foi revertido.')
-          setUploading(false)
-          await loadAllData()
-          return
+        if (parcelasPendentes.length > 0) {
+          // Soma o total ainda devido nas parcelas pendentes + o restante com juros
+          const totalPendenteAtual = parcelasPendentes.reduce((sum, p) => sum + p.valor, 0)
+          const restanteComJuros = Math.round(diferenca * (1 + juros / 100) * 100) / 100
+          const novoTotalADistribuir = Math.round((totalPendenteAtual + restanteComJuros) * 100) / 100
+
+          // Divide igualmente entre as parcelas pendentes
+          const novoValorPorParcela = Math.floor((novoTotalADistribuir / parcelasPendentes.length) * 100) / 100
+          // O centavo sobrando vai para a primeira parcela
+          const centavoExtra = Math.round((novoTotalADistribuir - novoValorPorParcela * parcelasPendentes.length) * 100) / 100
+
+          for (let i = 0; i < parcelasPendentes.length; i++) {
+            const p = parcelasPendentes[i]
+            const valorFinal = Math.round((novoValorPorParcela + (i === 0 ? centavoExtra : 0)) * 100) / 100
+            await supabase.from('parcelas')
+              .update({ valor: valorFinal })
+              .eq('id', p.id)
+          }
+        } else {
+          // Não há parcelas pendentes — cria uma nova com o restante + juros
+          const restanteComJuros = Math.round(diferenca * (1 + juros / 100) * 100) / 100
+          const { data: { user } } = await supabase.auth.getUser()
+          const { error: insertError } = await supabase.from('parcelas').insert({
+            parcelamento_id: showConfirm.parcelamentoId,
+            cliente_id: showConfirm.clienteId,
+            cliente_nome: showConfirm.clienteNome,
+            numero: showConfirm.totalParcelas + 1,
+            total_parcelas: showConfirm.totalParcelas + 1,
+            valor: restanteComJuros,
+            vencimento: proximoVencimento,
+            status: 'pendente',
+            data_pagamento: null,
+            user_id: user.id
+          })
+
+          if (insertError) {
+            // ROLLBACK: desfaz o pagamento se não conseguiu criar a nova parcela
+            await supabase.from('parcelas')
+              .update({ status: 'pendente', data_pagamento: null, valor: valorOriginal })
+              .eq('id', showConfirm.id)
+            alert('Erro ao criar parcela de restante. Pagamento foi revertido.')
+            setUploading(false)
+            await loadAllData()
+            return
+          }
         }
 
         // Renova o contrato: atualiza a data de vencimento para a data do próximo pagamento
-        await updateParcelamento(showConfirm.parcelamentoId, { vencimento: proximoVencimento })
+        if (proximoVencimento) {
+          await updateParcelamento(showConfirm.parcelamentoId, { vencimento: proximoVencimento })
+        }
 
       } else if (diferenca < 0) {
         // Pagou a mais — abate das próximas parcelas
@@ -428,11 +466,11 @@ export default function Parcelas() {
                     <>
                       <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                         <p className="text-xs text-amber-400">
-                          Restante: {formatCurrency(showConfirm.valor - parseFloat(valorParcial))} — será renovado como nova parcela com juros.
+                          Restante: {formatCurrency(showConfirm.valor - parseFloat(valorParcial))} — será somado com juros e redistribuído nas parcelas pendentes do contrato.
                         </p>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500 mb-1 block">Próximo vencimento do restante</label>
+                        <label className="text-xs text-gray-500 mb-1 block">Próximo vencimento (opcional — usado se não houver parcelas pendentes)</label>
                         <input type="date" value={proximoVencimento}
                           onChange={e => setProximoVencimento(e.target.value)}
                           className="w-full px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500 text-sm" />
