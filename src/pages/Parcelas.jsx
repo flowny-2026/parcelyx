@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import { Check, Clock, AlertTriangle, Upload, X, Image, Loader2 } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { supabase, updateParcelamento } from '../lib/supabase'
 
 export default function Parcelas() {
   const { parcelas, marcarPago, parcelamentos, userData, loadAllData } = useApp()
@@ -142,6 +142,10 @@ export default function Parcelas() {
           await loadAllData()
           return
         }
+
+        // Renova o contrato: atualiza a data de vencimento para a data do próximo pagamento
+        await updateParcelamento(showConfirm.parcelamentoId, { vencimento: proximoVencimento })
+
       } else if (diferenca < 0) {
         // Pagou a mais — abate das próximas parcelas
         const parcelasContrato = parcelas
@@ -338,7 +342,6 @@ export default function Parcelas() {
                 </div>
               </div>
             </div>
-            </div>
           </div>
         ))}
       </div>
@@ -398,7 +401,13 @@ export default function Parcelas() {
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${tipoPagamento === 'total' ? 'bg-pix-500 text-white' : 'bg-dark-600 text-gray-400 border border-dark-500'}`}>
                   Total
                 </button>
-                <button onClick={() => setTipoPagamento('parcial')}
+                <button onClick={() => {
+                  setTipoPagamento('parcial')
+                  // Preenche automaticamente com a data de hoje
+                  if (!proximoVencimento) {
+                    setProximoVencimento(new Date().toISOString().split('T')[0])
+                  }
+                }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${tipoPagamento === 'parcial' ? 'bg-primary-600 text-white' : 'bg-dark-600 text-gray-400 border border-dark-500'}`}>
                   Parcial
                 </button>
