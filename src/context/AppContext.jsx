@@ -10,6 +10,7 @@ import {
   getParcelamentos,
   createParcelamento as createParcelamentoSupabase,
   updateParcelamento as updateParcelamentoSupabase,
+  updateParcelamentoComParcelas as updateParcelamentoComParcelasSupabase,
   deleteParcelamento as deleteParcelamentoSupabase,
   getParcelas,
   marcarParcelaPaga as marcarParcelaPagaSupabase,
@@ -184,9 +185,9 @@ export function AppProvider({ children }) {
   }
 
   async function editParcelamento(id, updates) {
-    const { data, error } = await updateParcelamentoSupabase(id, updates)
+    const { data, error } = await updateParcelamentoComParcelasSupabase(id, updates)
     if (!error && data) {
-      setParcelamentos(parcelamentos.map(p => p.id === id ? data : p))
+      await loadAllData()
       return { success: true, data }
     }
     return { success: false, error }

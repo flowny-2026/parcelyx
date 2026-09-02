@@ -201,6 +201,72 @@ export async function updateParcelamento(id, updates) {
   return { data: data ? mapKeys(data, toCamel) : data, error }
 }
 
+export async function updateParcelamentoComParcelas(id, updates) {
+  try {
+    const user = await getCurrentUser()
+
+    // 1. Busca o contrato atual para ter os dados completos (frequencia, forma_pagamento, etc.)
+    const { data: contratoAtual, error: fetchError } = await supabase
+      .from('parcelamentos')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError) throw fetchError
+
+    // 2. Atualiza o registro do contrato com os novos valores
+    const updatesSnake = mapKeys(updates, toSnake)
+    const { data: contratoAtualizado, error: updateError } = await supabase
+      .from('parcelamentos')
+      .update(updatesSnake)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (updateError) throw updateError
+
+    // 3. Conta quantas parcelas já foram pagas (preserva)
+    const { data: parcelasPagas } = await supabase
+      .from('parcelas')
+      .select('id')
+      .eq('parcelamento_id', id)
+      .eq('status', 'pago')
+
+    const qtdPagas = parcelasPagas?.length || 0
+
+    // 4. Deleta apenas as parcelas pendentes/atrasadas do contrato
+    await supabase
+      .from('parcelas')
+      .delete()
+      .eq('parcelamento_id', id)
+      .neq('status', 'pago')
+
+    // 5. Recria as parcelas com os novos valores, pulando as já pagas
+    const dadosCompletos = {
+      ...contratoAtual,
+      ...updatesSnake,
+      id,
+      parcelas_pagas: qtdPagas,
+    }
+    const novasParcelas = generateParcelas(dadosCompletos)
+
+    // Só insere as parcelas que ainda não foram pagas
+    const parcelasParaInserir = novasParcelas.filter(p => p.status !== 'pago')
+
+    if (parcelasParaInserir.length > 0) {
+      const { error: insertError } = await supabase
+        .from('parcelas')
+        .insert(parcelasParaInserir.map(p => ({ ...p, user_id: user.id })))
+
+      if (insertError) throw insertError
+    }
+
+    return { data: mapKeys(contratoAtualizado, toCamel), error: null }
+  } catch (error) {
+    return { data: null, error }
+  }
+}
+
 export async function deleteParcelamento(id) {
   const { error } = await supabase
     .from('parcelamentos')
@@ -213,12 +279,12 @@ export async function deleteParcelamento(id) {
 // ====== PARCELAS ======
 
 export async function getParcelas() {
-  // Carrega parcelas dos últimos 3 meses e próximos 6 meses (janela de 9 meses)
+  // Carrega parcelas dos últimos 3 meses e próximos 36 meses (cobre contratos longos)
   const hoje = new Date()
   const inicio = new Date(hoje)
   inicio.setMonth(inicio.getMonth() - 3)
   const fim = new Date(hoje)
-  fim.setMonth(fim.getMonth() + 6)
+  fim.setMonth(fim.getMonth() + 36)
   
   const { data, error } = await supabase
     .from('parcelas')

@@ -71,14 +71,18 @@ export default function Parcelamentos() {
     }
   }
 
-  const handleEditSave = () => {
-    editParcelamento(selectedContrato.id, {
+  const handleEditSave = async () => {
+    const updates = {
       valorTotal: parseFloat(editForm.valorTotal),
       juros: parseFloat(editForm.juros) || 0,
       parcelas: parseInt(editForm.parcelas),
       observacoes: editForm.observacoes,
-    })
-    setSelectedContrato({ ...selectedContrato, ...editForm, valorTotal: parseFloat(editForm.valorTotal), juros: parseFloat(editForm.juros) || 0, parcelas: parseInt(editForm.parcelas) })
+    }
+    const result = await editParcelamento(selectedContrato.id, updates)
+    if (result.success) {
+      // Atualiza o contrato selecionado com os dados retornados do banco
+      setSelectedContrato({ ...selectedContrato, ...updates, ...result.data })
+    }
     setEditMode(false)
   }
 
