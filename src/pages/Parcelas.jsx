@@ -143,11 +143,44 @@ export default function Parcelas() {
           // O centavo sobrando vai para a primeira parcela
           const centavoExtra = Math.round((novoTotalADistribuir - novoValorPorParcela * parcelasPendentes.length) * 100) / 100
 
+          // Recalcula as datas de vencimento a partir da nova data base (proximoVencimento)
+          const frequencia = contrato?.frequencia || 'mensal'
+          const novasDatasPorIndice = parcelasPendentes.map((_, i) => {
+            if (!proximoVencimento) return null
+            const base = new Date(proximoVencimento + 'T12:00:00')
+            switch (frequencia) {
+              case 'diario':
+                base.setDate(base.getDate() + i)
+                break
+              case 'semanal':
+                base.setDate(base.getDate() + i * 7)
+                break
+              case 'quinzenal':
+                base.setDate(base.getDate() + i * 15)
+                break
+              case 'mensal':
+              default: {
+                const diaBase = new Date(proximoVencimento + 'T12:00:00').getDate()
+                const novaData = new Date(proximoVencimento + 'T12:00:00')
+                novaData.setMonth(novaData.getMonth() + i)
+                // Corrige meses curtos (ex: 31 de fev vira 28/29)
+                if (novaData.getDate() !== diaBase) novaData.setDate(0)
+                return `${novaData.getFullYear()}-${String(novaData.getMonth() + 1).padStart(2, '0')}-${String(novaData.getDate()).padStart(2, '0')}`
+              }
+            }
+            return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`
+          })
+
           for (let i = 0; i < parcelasPendentes.length; i++) {
             const p = parcelasPendentes[i]
             const valorFinal = Math.round((novoValorPorParcela + (i === 0 ? centavoExtra : 0)) * 100) / 100
+            const updateData = { valor: valorFinal }
+            // Atualiza o vencimento se tiver nova data base
+            if (proximoVencimento && novasDatasPorIndice[i]) {
+              updateData.vencimento = novasDatasPorIndice[i]
+            }
             await supabase.from('parcelas')
-              .update({ valor: valorFinal })
+              .update(updateData)
               .eq('id', p.id)
           }
         } else {
