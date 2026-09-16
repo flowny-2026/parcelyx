@@ -167,7 +167,7 @@ export default function Financeiro() {
             <div className="w-3 h-3 bg-amber-400 rounded-full"></div>
             <span className="text-xs text-gray-400">Emprestado</span>
           </div>
-          <p className="text-lg font-bold text-white">{formatCurrency(totalGeral)}</p>
+          <p className="text-lg font-bold text-white">{formatCurrency(totalEmprestadoReal)}</p>
         </div>
       </div>
 

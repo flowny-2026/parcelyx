@@ -4,7 +4,7 @@ import { Check, Clock, AlertTriangle, Upload, X, Image, Loader2 } from 'lucide-r
 import { supabase, updateParcelamento } from '../lib/supabase'
 
 export default function Parcelas() {
-  const { parcelas, marcarPago, parcelamentos, userData, loadAllData } = useApp()
+  const { parcelas, parcelamentos, userData, loadAllData } = useApp()
   const [filter, setFilter] = useState('pendentes')
   const [showConfirm, setShowConfirm] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -64,18 +64,21 @@ export default function Parcelas() {
         .eq('id', showConfirm.id)
     }
 
+    // Valor devido considerando multa por atraso (se houver). É a base de tudo.
+    const valorDevido = calcularValorComMulta(showConfirm)
+
     if (tipoPagamento === 'parcial' && valorParcial) {
       const valorPago = parseFloat(valorParcial)
       if (valorPago <= 0 || isNaN(valorPago)) { setUploading(false); return }
       
-      // Validação: não permitir valor absurdo (máx 10x o valor da parcela)
-      if (valorPago > showConfirm.valor * 10) {
+      // Validação: não permitir valor absurdo (máx 10x o valor devido)
+      if (valorPago > valorDevido * 10) {
         alert('Valor informado é muito superior ao valor da parcela. Verifique.')
         setUploading(false)
         return
       }
       
-      const valorOriginal = showConfirm.valor
+      const valorOriginal = valorDevido
       const diferenca = valorOriginal - valorPago
 
       // Se pagou menos e não há parcelas pendentes e não escolheu data, avisa
@@ -103,18 +106,30 @@ export default function Parcelas() {
       }
 
       // Marca parcela atual como paga com o valor informado
-      const { error: updateError } = await supabase.from('parcelas')
+      // .neq('status','pago') casa com qualquer status não-pago (pendente, atrasado, vence_hoje)
+      // e previne double-pay. .select() permite conferir se alguma linha foi de fato atualizada.
+      const { data: parcelaPagaData, error: updateError } = await supabase.from('parcelas')
         .update({ 
           status: 'pago', 
           data_pagamento: new Date().toISOString().split('T')[0],
           valor: valorPago
         })
         .eq('id', showConfirm.id)
-        .eq('status', 'pendente') // previne double-pay via condição WHERE
+        .neq('status', 'pago') // previne double-pay via condição WHERE
+        .select()
 
       if (updateError) {
         alert('Erro ao processar pagamento. Tente novamente.')
         setUploading(false)
+        return
+      }
+
+      // Se nenhuma linha foi atualizada, a parcela já estava paga — aborta sem redistribuir
+      if (!parcelaPagaData || parcelaPagaData.length === 0) {
+        alert('Esta parcela já foi paga por outra operação.')
+        setUploading(false)
+        setShowConfirm(null)
+        await loadAllData()
         return
       }
 
@@ -201,9 +216,10 @@ export default function Parcelas() {
           })
 
           if (insertError) {
-            // ROLLBACK: desfaz o pagamento se não conseguiu criar a nova parcela
+            // ROLLBACK: desfaz o pagamento se não conseguiu criar a nova parcela.
+            // Restaura o valor ORIGINAL armazenado (sem multa), pois a multa é recalculada na exibição.
             await supabase.from('parcelas')
-              .update({ status: 'pendente', data_pagamento: null, valor: valorOriginal })
+              .update({ status: 'pendente', data_pagamento: null, valor: showConfirm.valor })
               .eq('id', showConfirm.id)
             alert('Erro ao criar parcela de restante. Pagamento foi revertido.')
             setUploading(false)
@@ -237,11 +253,25 @@ export default function Parcelas() {
       // Recarrega todos os dados
       await loadAllData()
     } else {
-      // Pagamento total — verifica concorrência
-      const { data: parcelaAtual } = await supabase.from('parcelas')
-        .select('status').eq('id', showConfirm.id).single()
-      
-      if (parcelaAtual?.status === 'pago') {
+      // Pagamento total — grava o valor devido (com multa por atraso, se houver).
+      // .neq('status','pago') previne double-pay e casa com qualquer status não-pago.
+      const { data: parcelaPagaData, error: updateError } = await supabase.from('parcelas')
+        .update({
+          status: 'pago',
+          data_pagamento: new Date().toISOString().split('T')[0],
+          valor: valorDevido
+        })
+        .eq('id', showConfirm.id)
+        .neq('status', 'pago')
+        .select()
+
+      if (updateError) {
+        alert('Erro ao processar pagamento. Tente novamente.')
+        setUploading(false)
+        return
+      }
+
+      if (!parcelaPagaData || parcelaPagaData.length === 0) {
         alert('Esta parcela já foi paga.')
         setUploading(false)
         setShowConfirm(null)
@@ -249,7 +279,7 @@ export default function Parcelas() {
         return
       }
 
-      await marcarPago(showConfirm.id)
+      await loadAllData()
     }
 
     setUploading(false)
@@ -460,8 +490,14 @@ export default function Parcelas() {
               <p className="text-base font-semibold text-white">{showConfirm.clienteNome}</p>
               <div className="flex justify-between mt-2">
                 <span className="text-sm text-gray-400">Parcela {showConfirm.numero}/{showConfirm.totalParcelas}</span>
-                <span className="text-sm font-bold text-pix-400">{formatCurrency(showConfirm.valor)}</span>
+                <span className="text-sm font-bold text-pix-400">{formatCurrency(calcularValorComMulta(showConfirm))}</span>
               </div>
+              {calcularValorComMulta(showConfirm) > showConfirm.valor && (
+                <div className="flex justify-between mt-1 text-xs">
+                  <span className="text-gray-500">Valor original {formatCurrency(showConfirm.valor)} + multa por atraso</span>
+                  <span className="text-red-400">+{formatCurrency(calcularValorComMulta(showConfirm) - showConfirm.valor)}</span>
+                </div>
+              )}
             </div>
 
             {/* Tipo de pagamento */}
@@ -491,15 +527,15 @@ export default function Parcelas() {
                       <span className="text-gray-400 text-sm">R$</span>
                       <input type="number" step="0.01" value={valorParcial}
                         onChange={e => setValorParcial(e.target.value)}
-                        placeholder={showConfirm.valor.toString()}
+                        placeholder={calcularValorComMulta(showConfirm).toFixed(2)}
                         className="flex-1 px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500 text-sm" />
                     </div>
                   </div>
-                  {valorParcial && parseFloat(valorParcial) < showConfirm.valor && (
+                  {valorParcial && parseFloat(valorParcial) < calcularValorComMulta(showConfirm) && (
                     <>
                       <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                         <p className="text-xs text-amber-400">
-                          Restante: {formatCurrency(showConfirm.valor - parseFloat(valorParcial))} — será somado com juros e redistribuído nas parcelas pendentes do contrato.
+                          Restante: {formatCurrency(calcularValorComMulta(showConfirm) - parseFloat(valorParcial))} — será somado com juros e redistribuído nas parcelas pendentes do contrato.
                         </p>
                       </div>
                       <div>
@@ -510,9 +546,9 @@ export default function Parcelas() {
                       </div>
                     </>
                   )}
-                  {valorParcial && parseFloat(valorParcial) > showConfirm.valor && (
+                  {valorParcial && parseFloat(valorParcial) > calcularValorComMulta(showConfirm) && (
                     <p className="text-xs text-pix-400">
-                      Excedente de {formatCurrency(parseFloat(valorParcial) - showConfirm.valor)} será abatido nas próximas parcelas.
+                      Excedente de {formatCurrency(parseFloat(valorParcial) - calcularValorComMulta(showConfirm))} será abatido nas próximas parcelas.
                     </p>
                   )}
                 </div>
