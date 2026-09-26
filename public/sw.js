@@ -1,54 +1,22 @@
-const CACHE_NAME = 'parcelyx-v2.0.4';
+// Service Worker v2.1.0 — cache desabilitado para garantir atualizações imediatas
+const CACHE_NAME = 'parcelyx-v2.1.0';
 
-// Install
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-// Activate - cleanup old caches
 self.addEventListener('activate', (event) => {
+  // Apaga TODOS os caches antigos
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((key) => caches.delete(key)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch - network first, fallback to cache
+// Sem cache — sempre busca da rede
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests and Supabase API calls
   if (event.request.method !== 'GET') return;
   if (event.request.url.includes('supabase.co')) return;
-  if (event.request.url.includes('chrome-extension')) return;
-
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone and cache successful responses
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // Fallback to cache when offline
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) return cachedResponse;
-          // For navigation requests, return cached index.html
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-        });
-      })
-  );
+  // Passa direto para a rede sem interceptar
 });
