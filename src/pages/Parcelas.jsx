@@ -393,58 +393,44 @@ export default function Parcelas() {
       {/* Parcelas list */}
       <div className="space-y-2">
         {filtered.slice(0, visivel).map(parcela => (
-          <div key={parcela.id} className="bg-dark-700 rounded-2xl p-3 border border-dark-500/50 overflow-hidden">
-            <div className="flex items-center gap-2">
-              {/* Ícone status */}
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+          <div key={parcela.id} className="bg-dark-700 rounded-2xl border border-dark-500/50 overflow-hidden">
+            {/* Linha 1: ícone + nome + valor */}
+            <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+              <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center ${
                 parcela.status === 'pago' ? 'bg-pix-500/10' :
                 parcela.status === 'atrasado' ? 'bg-red-500/10' : 'bg-amber-500/10'
               }`}>
                 {getStatusIcon(parcela.status)}
               </div>
-
-              {/* Nome + data */}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-100 truncate">{parcela.clienteNome}</p>
-                <p className="text-[10px] text-gray-500">
-                  {parcela.numero}/{parcela.totalParcelas} • {new Date(parcela.vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}
-                </p>
-              </div>
-
-              {/* Valor */}
-              <div className="flex-shrink-0 text-right mr-1">
-                <p className="text-xs font-bold text-white">{formatCurrency(calcularValorComMulta(parcela))}</p>
-                {parcela.status === 'atrasado' && multaDiaria > 0 && calcularValorComMulta(parcela) > parcela.valor && (
-                  <p className="text-[9px] text-red-400 line-through">{formatCurrency(parcela.valor)}</p>
-                )}
-              </div>
-
-              {/* Botão ação */}
-              {parcela.status !== 'pago' ? (
-                <button onClick={() => setShowConfirm(parcela)}
-                  style={{ minHeight: 'unset' }}
-                  className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-pix-500 rounded-lg text-white text-[11px] font-bold">
-                  <Check className="w-3 h-3" />
-                  Pagar
-                </button>
-              ) : (
-                <div className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-pix-500/10 rounded-lg text-[11px] font-bold text-pix-400">
-                  <Check className="w-3 h-3" />
-                  Pago
-                </div>
-              )}
+              <p className="flex-1 min-w-0 text-xs font-semibold text-white truncate">
+                {parcela.clienteNome}
+              </p>
+              <p className="flex-shrink-0 text-xs font-bold text-white">
+                {formatCurrency(calcularValorComMulta(parcela))}
+              </p>
             </div>
 
-            {/* Badge status — linha separada abaixo */}
-            <div className="mt-2 ml-9">
-              <span className={`inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border leading-none ${getStatusStyle(parcela.status)}`}
+            {/* Linha 2: parcela/data + status + botão */}
+            <div className="flex items-center gap-2 px-3 pb-3">
+              <p className="text-[10px] text-gray-500 flex-1 min-w-0 truncate">
+                {parcela.numero}/{parcela.totalParcelas} • {new Date(parcela.vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}
+              </p>
+              <span className={`flex-shrink-0 px-2 py-0.5 text-[10px] font-medium rounded-full border ${getStatusStyle(parcela.status)}`}
                 style={{ minHeight: 'unset' }}>
                 {getStatusLabel(parcela.status)}
               </span>
+              {parcela.status !== 'pago' && (
+                <button onClick={() => setShowConfirm(parcela)}
+                  style={{ minHeight: 'unset' }}
+                  className="flex-shrink-0 px-3 py-1 bg-pix-500 rounded-lg text-white text-[11px] font-bold flex items-center gap-1">
+                  <Check className="w-3 h-3" />
+                  Receber
+                </button>
+              )}
               {parcela.status === 'pago' && (parcela.comprovanteUrl || parcela.comprovante_url) && (
                 <button onClick={() => setViewComprovante(parcela.comprovanteUrl || parcela.comprovante_url)}
                   style={{ minHeight: 'unset' }}
-                  className="ml-2 p-1 bg-primary-500/10 rounded-lg border border-primary-500/20 inline-flex">
+                  className="flex-shrink-0 p-1 bg-primary-500/10 rounded-lg border border-primary-500/20">
                   <Image className="w-3.5 h-3.5 text-primary-400" />
                 </button>
               )}
