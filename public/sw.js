@@ -1,4 +1,4 @@
-const CACHE_NAME = 'parcelyx-v2.0.0';
+const CACHE_NAME = 'parcelyx-v2.0.4';
 
 // Install
 self.addEventListener('install', (event) => {
