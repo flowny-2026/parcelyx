@@ -1,53 +1,83 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Outlet, NavLink, useLocation, Navigate, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, CreditCard, Receipt,
-  MessageSquare, PieChart, Settings, Menu, X, LogOut, Bell, AlertTriangle, Clock, Search, CalendarDays
+  MessageSquare, PieChart, Settings, Menu, X, LogOut, Bell, AlertTriangle, Clock, Search, CalendarDays, RefreshCw, Camera
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { supabase } from '../lib/supabase'
 
+// Itens do menu inferior (5 itens — o central é "Receber")
+const bottomNavItems = [
+  { path: '/',               icon: LayoutDashboard, label: 'Início' },
+  { path: '/parcelamentos',  icon: CreditCard,      label: 'Contratos' },
+  { path: '/parcelas',       icon: RefreshCw,       label: 'Receber', center: true },
+  { path: '/clientes',       icon: Users,           label: 'Clientes' },
+  { path: '/configuracoes',  icon: Menu,            label: 'Menu' },
+]
+
+// Todos os itens da sidebar desktop
 const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Início' },
-  { path: '/parcelamentos', icon: CreditCard, label: 'Contratos' },
-  { path: '/clientes', icon: Users, label: 'Clientes' },
-  { path: '/parcelas', icon: Receipt, label: 'Parcelas' },
-  { path: '/cobrancas', icon: MessageSquare, label: 'Cobranças' },
-  { path: '/financeiro', icon: PieChart, label: 'Financeiro' },
-  { path: '/agenda', icon: CalendarDays, label: 'Agenda' },
-  { path: '/configuracoes', icon: Settings, label: 'Configurações' },
+  { path: '/',               icon: LayoutDashboard, label: 'Início' },
+  { path: '/parcelamentos',  icon: CreditCard,      label: 'Contratos' },
+  { path: '/clientes',       icon: Users,           label: 'Clientes' },
+  { path: '/parcelas',       icon: Receipt,         label: 'Parcelas' },
+  { path: '/cobrancas',      icon: MessageSquare,   label: 'Cobranças' },
+  { path: '/financeiro',     icon: PieChart,        label: 'Financeiro' },
+  { path: '/agenda',         icon: CalendarDays,    label: 'Agenda' },
+  { path: '/configuracoes',  icon: Settings,        label: 'Configurações' },
 ]
 
 export default function Layout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showAlerts, setShowAlerts] = useState(false)
-  const [showSearch, setShowSearch] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const location = useLocation()
-  const navigate = useNavigate()
-  const { isAuthenticated, logout, userData, parcelas, clientes, parcelamentos } = useApp()
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
+  const [showAlerts, setShowAlerts]     = useState(false)
+  const [showSearch, setShowSearch]     = useState(false)
+  const [searchQuery, setSearchQuery]   = useState('')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const photoInputRef = useRef(null)
+  const location  = useLocation()
+  const navigate  = useNavigate()
+  const { isAuthenticated, logout, userData, updateUserData, parcelas, clientes, parcelamentos } = useApp()
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />
 
-  const nomeExibido = userData?.negocio || userData?.nome || 'Meu Negócio'
-  const emailExibido = userData?.email || ''
+  const nomeExibido   = userData?.negocio || userData?.nome || 'Meu Negócio'
+  const emailExibido  = userData?.email || ''
   const inicialExibida = nomeExibido.charAt(0).toUpperCase()
+  const fotoUrl       = userData?.foto_url || userData?.fotoUrl || null
 
   // Verificação de expiração do plano
   const dataExpiracao = userData?.dataExpiracao || userData?.data_expiracao
   const plano = userData?.plano
   let diasRestantes = null
   let planoExpirado = false
-
   if (dataExpiracao) {
     const expDate = new Date(dataExpiracao + 'T23:59:59')
-    const hojeDt = new Date()
-    diasRestantes = Math.ceil((expDate - hojeDt) / (1000 * 60 * 60 * 24))
+    diasRestantes = Math.ceil((expDate - new Date()) / (1000 * 60 * 60 * 24))
     planoExpirado = diasRestantes < 0
   }
 
-  // Se o plano expirou, bloqueia acesso
+  // Upload de foto de perfil
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 3 * 1024 * 1024) { alert('Imagem muito grande. Máximo 3MB.'); return }
+    setUploadingPhoto(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const { data: { user } } = await supabase.auth.getUser()
+      const fileName = `avatar_${user.id}.${ext}`
+      await supabase.storage.from('avatars').upload(fileName, file, { upsert: true })
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName)
+      const url = urlData?.publicUrl + `?t=${Date.now()}`
+      await updateUserData({ foto_url: url })
+    } catch (err) {
+      console.error('Erro ao fazer upload:', err)
+    }
+    setUploadingPhoto(false)
+    e.target.value = ''
+  }
+
   if (planoExpirado) {
     return (
       <div className="min-h-screen bg-dark-900 flex items-center justify-center p-4">
@@ -66,9 +96,6 @@ export default function Layout() {
             <a href="https://wa.me/5516992383821?text=Olá!%20Meu%20plano%20expirou%20e%20gostaria%20de%20renovar."
               target="_blank" rel="noreferrer"
               className="w-full py-3.5 bg-pix-500 hover:bg-pix-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 mb-3">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
               Falar com suporte
             </a>
             <button onClick={logout}
@@ -81,95 +108,90 @@ export default function Layout() {
     )
   }
 
-  // Alertas locais
-  const hoje = new Date().toISOString().split('T')[0]
-  const atrasadas = parcelas?.filter(p => p.status === 'atrasado') || []
-  const venceHoje = parcelas?.filter(p => p.status === 'vence_hoje') || []
+  const atrasadas   = parcelas?.filter(p => p.status === 'atrasado') || []
+  const venceHoje   = parcelas?.filter(p => p.status === 'vence_hoje') || []
   const totalAlertas = atrasadas.length + venceHoje.length
 
-  // Busca global
   const searchResults = searchQuery.length >= 2 ? {
-    clientes: (clientes || []).filter(c => c.nome?.toLowerCase().includes(searchQuery.toLowerCase()) || c.telefone?.includes(searchQuery)).slice(0, 5),
+    clientes:  (clientes || []).filter(c => c.nome?.toLowerCase().includes(searchQuery.toLowerCase()) || c.telefone?.includes(searchQuery)).slice(0, 5),
     contratos: (parcelamentos || []).filter(p => p.clienteNome?.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5),
-    parcelas: (parcelas || []).filter(p => p.clienteNome?.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5),
   } : null
+
+  // Avatar component reutilizável
+  const Avatar = ({ size = 'md', showCamera = false }) => {
+    const sizes = { sm: 'w-8 h-8 text-sm', md: 'w-10 h-10 text-base', lg: 'w-12 h-12 text-lg' }
+    return (
+      <div className={`relative flex-shrink-0 ${showCamera ? 'cursor-pointer' : ''}`}
+        onClick={showCamera ? () => photoInputRef.current?.click() : undefined}>
+        <div className={`${sizes[size]} rounded-full overflow-hidden border-2 border-pix-500/40 flex items-center justify-center bg-dark-600`}>
+          {fotoUrl
+            ? <img src={fotoUrl} alt="Perfil" className="w-full h-full object-cover" />
+            : <span className="font-bold text-pix-400">{inicialExibida}</span>
+          }
+        </div>
+        {showCamera && (
+          <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-pix-500 rounded-full flex items-center justify-center border-2 border-dark-900">
+            {uploadingPhoto
+              ? <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin" />
+              : <Camera className="w-2.5 h-2.5 text-white" />
+            }
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-dark-900 flex">
-      {/* Sidebar - Desktop */}
+      {/* Input hidden para foto */}
+      <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+
+      {/* ── SIDEBAR DESKTOP ── */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-dark-800 border-r border-dark-500/50">
         <div className="flex items-center h-16 px-6 border-b border-dark-500/50">
           <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5">
-            <img 
-              src="/img/140x93px.png" 
-              alt="Parcelyx" 
-              className="h-10 w-auto object-contain"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = '/img/icon-192.png';
-              }}
-            />
+            <img src="/img/140x93px.png" alt="Parcelyx" className="h-10 w-auto object-contain"
+              onError={e => { e.target.onerror = null; e.target.src = '/img/icon-192.png' }} />
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map(item => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/'}
+            <NavLink key={item.path} to={item.path} end={item.path === '/'}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
                     : 'text-gray-400 hover:bg-dark-600 hover:text-gray-200 border border-transparent'
-                }`
-              }
-            >
+                }`}>
               <item.icon className="w-5 h-5" />
               {item.label}
             </NavLink>
           ))}
         </nav>
         <div className="p-4 border-t border-dark-500/50">
-          <button onClick={() => navigate('/novidades')}
-            className="w-full flex items-center gap-2 px-3 py-2 mb-3 rounded-xl text-xs font-medium text-gray-500 hover:text-gray-300 hover:bg-dark-600 transition-all">
-            🆕 Novidades v2.0
-          </button>
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
-              <span className="text-sm font-semibold text-primary-400">{inicialExibida}</span>
-            </div>
+            <Avatar size="md" showCamera />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-200 truncate">{nomeExibido}</p>
               <p className="text-xs text-gray-500 truncate">{emailExibido}</p>
             </div>
-            <button
-              onClick={logout}
-              title="Sair"
-              className="p-1.5 rounded-lg hover:bg-dark-600 text-gray-500 hover:text-red-400 transition-colors"
-            >
+            <button onClick={logout} title="Sair"
+              className="p-1.5 rounded-lg hover:bg-dark-600 text-gray-500 hover:text-red-400 transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
       </aside>
 
-      {/* Mobile sidebar overlay */}
+      {/* ── SIDEBAR MOBILE OVERLAY ── */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
           <aside className="fixed inset-y-0 left-0 w-72 bg-dark-800 shadow-elevated z-50 animate-slide-in flex flex-col">
             <div className="flex items-center justify-between h-16 px-6 border-b border-dark-500/50">
               <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5">
-                <img 
-                  src="/img/140x93px.png" 
-                  alt="Parcelyx" 
-                  className="h-10 w-auto object-contain"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = '/img/icon-192.png';
-                  }}
-                />
+                <img src="/img/140x93px.png" alt="Parcelyx" className="h-10 w-auto object-contain"
+                  onError={e => { e.target.onerror = null; e.target.src = '/img/icon-192.png' }} />
               </div>
               <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-dark-600">
                 <X className="w-5 h-5 text-gray-400" />
@@ -177,45 +199,28 @@ export default function Layout() {
             </div>
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
               {navItems.map(item => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/'}
+                <NavLink key={item.path} to={item.path} end={item.path === '/'}
                   onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isActive
                         ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
                         : 'text-gray-400 hover:bg-dark-600 hover:text-gray-200 border border-transparent'
-                    }`
-                  }
-                >
+                    }`}>
                   <item.icon className="w-5 h-5" />
                   {item.label}
                 </NavLink>
               ))}
             </nav>
             <div className="p-4 border-t border-dark-500/50">
-              <button onClick={() => { setSidebarOpen(false); navigate('/novidades') }}
-                className="w-full flex items-center gap-2 px-3 py-2 mb-3 rounded-xl text-xs font-medium text-gray-500 hover:text-gray-300 hover:bg-dark-600 transition-all">
-                🆕 Novidades v2.0
-              </button>
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-10 h-10 bg-primary-500/20 rounded-full flex items-center justify-center">
-                  <span className="text-base font-semibold text-primary-400">{inicialExibida}</span>
-                </div>
+                <Avatar size="lg" showCamera />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-200 truncate">{nomeExibido}</p>
                   <p className="text-xs text-gray-500 truncate">{emailExibido}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    setSidebarOpen(false)
-                    logout()
-                  }}
-                  title="Sair"
-                  className="p-2 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-colors"
-                >
+                <button onClick={() => { setSidebarOpen(false); logout() }} title="Sair"
+                  className="p-2 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-colors">
                   <LogOut className="w-5 h-5" />
                 </button>
               </div>
@@ -224,33 +229,31 @@ export default function Layout() {
         </div>
       )}
 
-      {/* Main content */}
+      {/* ── MAIN ── */}
       <div className="flex-1 md:ml-64">
-        {/* Top bar mobile */}
-        <header className="md:hidden sticky top-0 z-30 bg-dark-800/90 backdrop-blur-md border-b border-dark-500/50">
-          <div className="flex items-center justify-between h-14 px-4">
-            <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 rounded-lg hover:bg-dark-600">
-              <Menu className="w-5 h-5 text-gray-300" />
-            </button>
-            <div className="flex items-center gap-2 bg-white rounded-xl px-2 py-1">
-              <img 
-                src="/img/140x93px.png" 
-                alt="Parcelyx" 
-                className="h-9 w-auto object-contain"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = '/img/icon-192.png';
-                }}
-              />
+
+        {/* ── TOP BAR MOBILE ── */}
+        <header className="md:hidden sticky top-0 z-30 bg-dark-900/95 backdrop-blur-md">
+          <div className="flex items-center justify-between px-4 pt-3 pb-3">
+            {/* Avatar com câmera */}
+            <div className="flex items-center gap-3">
+              <Avatar size="md" showCamera />
+              <div>
+                <p className="text-xs text-gray-400 leading-none">Bem vindo,</p>
+                <p className="text-sm font-bold text-white leading-tight">{nomeExibido}</p>
+              </div>
             </div>
+            {/* Ações */}
             <div className="flex items-center gap-1">
-              <button onClick={() => { setShowSearch(!showSearch); setShowAlerts(false) }} className="p-2 rounded-lg hover:bg-dark-600">
-                <Search className="w-5 h-5 text-gray-400" />
+              <button onClick={() => { setShowSearch(!showSearch); setShowAlerts(false) }}
+                className="p-2 rounded-xl hover:bg-dark-700 text-gray-400">
+                <Search className="w-5 h-5" />
               </button>
-              <button onClick={() => { setShowAlerts(!showAlerts); setShowSearch(false) }} className="p-2 rounded-lg hover:bg-dark-600 relative">
-                <Bell className="w-5 h-5 text-gray-400" />
+              <button onClick={() => { setShowAlerts(!showAlerts); setShowSearch(false) }}
+                className="p-2 rounded-xl hover:bg-dark-700 text-gray-400 relative">
+                <Bell className="w-5 h-5" />
                 {totalAlertas > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
                     {totalAlertas > 9 ? '9+' : totalAlertas}
                   </span>
                 )}
@@ -259,20 +262,18 @@ export default function Layout() {
           </div>
         </header>
 
-        {/* Painel de alertas */}
+        {/* ── PAINEL ALERTAS ── */}
         {showAlerts && (
           <div className="md:hidden fixed inset-0 z-[90]" onClick={() => setShowAlerts(false)}>
             <div className="fixed inset-0 bg-black/50" />
-            <div className="absolute top-14 right-2 left-2 bg-dark-800 rounded-2xl border border-dark-500/50 shadow-elevated animate-fade-in max-h-[60vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="absolute top-16 right-2 left-2 bg-dark-800 rounded-2xl border border-dark-500/50 shadow-elevated animate-fade-in max-h-[60vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               <div className="p-4 border-b border-dark-500/50 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white">Alertas</h3>
-                <button onClick={() => setShowAlerts(false)} className="text-gray-500 hover:text-gray-300">
-                  <X className="w-4 h-4" />
-                </button>
+                <button onClick={() => setShowAlerts(false)}><X className="w-4 h-4 text-gray-500" /></button>
               </div>
               <div className="p-3 space-y-2">
                 {totalAlertas === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-4">Nenhum alerta no momento ✅</p>
+                  <p className="text-sm text-gray-500 text-center py-4">Nenhum alerta ✅</p>
                 ) : (
                   <>
                     {venceHoje.length > 0 && (
@@ -280,7 +281,7 @@ export default function Layout() {
                         <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-amber-300">{venceHoje.length} parcela{venceHoje.length > 1 ? 's' : ''} vence{venceHoje.length === 1 ? '' : 'm'} hoje</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{venceHoje.slice(0, 3).map(p => p.clienteNome).join(', ')}{venceHoje.length > 3 ? '...' : ''}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{venceHoje.slice(0, 3).map(p => p.clienteNome).join(', ')}</p>
                         </div>
                       </div>
                     )}
@@ -289,7 +290,7 @@ export default function Layout() {
                         <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-red-300">{atrasadas.length} parcela{atrasadas.length > 1 ? 's' : ''} em atraso</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{atrasadas.slice(0, 3).map(p => p.clienteNome).join(', ')}{atrasadas.length > 3 ? '...' : ''}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{atrasadas.slice(0, 3).map(p => p.clienteNome).join(', ')}</p>
                         </div>
                       </div>
                     )}
@@ -300,11 +301,11 @@ export default function Layout() {
           </div>
         )}
 
-        {/* Painel de busca global */}
+        {/* ── PAINEL BUSCA ── */}
         {showSearch && (
           <div className="md:hidden fixed inset-0 z-[90]" onClick={() => { setShowSearch(false); setSearchQuery('') }}>
             <div className="fixed inset-0 bg-black/50" />
-            <div className="absolute top-14 right-2 left-2 bg-dark-800 rounded-2xl border border-dark-500/50 shadow-elevated animate-fade-in max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="absolute top-16 right-2 left-2 bg-dark-800 rounded-2xl border border-dark-500/50 shadow-elevated animate-fade-in max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               <div className="p-3 border-b border-dark-500/50">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -314,7 +315,7 @@ export default function Layout() {
                     autoFocus />
                 </div>
               </div>
-              {searchResults && (
+              {searchResults ? (
                 <div className="p-3 space-y-3">
                   {searchResults.clientes.length > 0 && (
                     <div>
@@ -346,12 +347,11 @@ export default function Layout() {
                       ))}
                     </div>
                   )}
-                  {searchResults.clientes.length === 0 && searchResults.contratos.length === 0 && searchResults.parcelas.length === 0 && (
+                  {searchResults.clientes.length === 0 && searchResults.contratos.length === 0 && (
                     <p className="text-sm text-gray-500 text-center py-4">Nenhum resultado para "{searchQuery}"</p>
                   )}
                 </div>
-              )}
-              {!searchResults && (
+              ) : (
                 <p className="text-sm text-gray-500 text-center py-6">Digite pelo menos 2 caracteres</p>
               )}
             </div>
@@ -360,13 +360,12 @@ export default function Layout() {
 
         {/* Banner plano expirando */}
         {diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 2 && (
-          <div className="mx-3 md:mx-4 lg:mx-8 mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
+          <div className="mx-3 mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
             <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-300">
-                {diasRestantes === 0 ? 'Seu plano expira hoje!' : `Seu plano expira em ${diasRestantes} dia${diasRestantes > 1 ? 's' : ''}!`}
+                {diasRestantes === 0 ? 'Seu plano expira hoje!' : `Expira em ${diasRestantes} dia${diasRestantes > 1 ? 's' : ''}!`}
               </p>
-              <p className="text-xs text-gray-500">Renove para não perder acesso.</p>
             </div>
             <a href="https://wa.me/5516992383821?text=Olá!%20Quero%20renovar%20meu%20plano%20do%20Parcelyx."
               target="_blank" rel="noreferrer"
@@ -376,30 +375,64 @@ export default function Layout() {
           </div>
         )}
 
-        {/* Page content */}
-        <main className="p-3 md:p-4 lg:p-8 max-w-7xl mx-auto">
+        {/* ── PAGE CONTENT ── */}
+        <main className="px-4 pt-2 pb-28 md:p-8 max-w-7xl mx-auto">
           <Outlet />
         </main>
       </div>
 
-      {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-dark-500/50 mobile-nav z-30 safe-area-bottom">
-        <div className="flex items-center justify-around h-16 px-1">
-          {navItems.slice(0, 5).map(item => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/'}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] ${
-                  isActive ? 'text-primary-400' : 'text-gray-500'
-                }`
+      {/* ── BOTTOM NAV MOBILE ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {/* Fundo com notch para o botão central */}
+        <div className="relative bg-dark-800 border-t border-dark-600/60">
+          {/* Recorte central decorativo */}
+          <div className="absolute -top-px left-1/2 -translate-x-1/2 w-16 h-1 bg-dark-800" />
+
+          <div className="flex items-end justify-around px-2 pt-2 pb-2">
+            {bottomNavItems.map((item) => {
+              if (item.center) {
+                // Botão central elevado
+                return (
+                  <NavLink key={item.path} to={item.path} end={item.path === '/'}
+                    className="flex flex-col items-center -mt-6 relative">
+                    {({ isActive }) => (
+                      <>
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
+                          isActive
+                            ? 'bg-pix-400 shadow-pix-500/40'
+                            : 'bg-pix-500 hover:bg-pix-400 shadow-pix-500/30'
+                        }`}
+                          style={{ boxShadow: '0 4px 20px rgba(16,185,129,0.5)' }}>
+                          <item.icon className="w-6 h-6 text-white" strokeWidth={2.5} />
+                        </div>
+                        <span className={`text-[10px] font-semibold mt-1 ${isActive ? 'text-pix-400' : 'text-gray-400'}`}>
+                          {item.label}
+                        </span>
+                      </>
+                    )}
+                  </NavLink>
+                )
               }
-            >
-              <item.icon className="w-5 h-5" strokeWidth={2.5} />
-              <span className="text-[10px] font-medium truncate max-w-full">{item.label.slice(0, 10)}</span>
-            </NavLink>
-          ))}
+              return (
+                <NavLink key={item.path} to={item.path} end={item.path === '/'}
+                  className={({ isActive }) =>
+                    `flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all min-w-[52px] ${
+                      isActive ? 'text-pix-400' : 'text-gray-500 hover:text-gray-300'
+                    }`
+                  }>
+                  {({ isActive }) => (
+                    <>
+                      <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-pix-500/15' : ''}`}>
+                        <item.icon className="w-5 h-5" strokeWidth={2} />
+                      </div>
+                      <span className="text-[10px] font-medium">{item.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              )
+            })}
+          </div>
         </div>
       </nav>
     </div>

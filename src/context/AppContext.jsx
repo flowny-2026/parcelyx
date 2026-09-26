@@ -225,6 +225,15 @@ export function AppProvider({ children }) {
     return { success: false, error }
   }
 
+  // Wrapper que salva no banco E atualiza o estado local
+  async function updateUserDataLocal(updates) {
+    const { data, error } = await updateUserData(updates)
+    if (!error && data) {
+      setUserData(data)
+    }
+    return { data, error }
+  }
+
   async function logout() {
     await signOut()
     // onAuthStateChange cuida da limpeza dos dados
@@ -320,7 +329,7 @@ export function AppProvider({ children }) {
       removeParcelamento,
       marcarPago,
       updateSaldoCaixa,
-      updateUserData,
+      updateUserData: updateUserDataLocal,
       logout,
       loadAllData,
       getStats, 
