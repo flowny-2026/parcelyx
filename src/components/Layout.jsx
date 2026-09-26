@@ -376,32 +376,30 @@ export default function Layout() {
         )}
 
         {/* ── PAGE CONTENT ── */}
-        <main className="px-4 pt-2 pb-28 md:p-8 max-w-7xl mx-auto">
+        <main className="px-4 pt-2 pb-32 md:p-8 max-w-7xl mx-auto"
+          style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
           <Outlet />
         </main>
       </div>
 
       {/* ── BOTTOM NAV MOBILE ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {/* Fundo com notch para o botão central */}
-        <div className="relative bg-dark-800 border-t border-dark-600/60">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30">
+        <div className="relative bg-dark-800 border-t border-dark-600/60"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}>
+
           {/* Recorte central decorativo */}
           <div className="absolute -top-px left-1/2 -translate-x-1/2 w-16 h-1 bg-dark-800" />
 
           <div className="flex items-end justify-around px-2 pt-2 pb-2">
             {bottomNavItems.map((item) => {
               if (item.center) {
-                // Botão central elevado
                 return (
                   <NavLink key={item.path} to={item.path} end={item.path === '/'}
-                    className="flex flex-col items-center -mt-6 relative">
+                    className="flex flex-col items-center -mt-5 relative">
                     {({ isActive }) => (
                       <>
                         <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
-                          isActive
-                            ? 'bg-pix-400 shadow-pix-500/40'
-                            : 'bg-pix-500 hover:bg-pix-400 shadow-pix-500/30'
+                          isActive ? 'bg-pix-400' : 'bg-pix-500 hover:bg-pix-400'
                         }`}
                           style={{ boxShadow: '0 4px 20px rgba(16,185,129,0.5)' }}>
                           <item.icon className="w-6 h-6 text-white" strokeWidth={2.5} />
