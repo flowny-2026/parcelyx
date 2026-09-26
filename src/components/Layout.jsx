@@ -376,7 +376,7 @@ export default function Layout() {
         )}
 
         {/* ── PAGE CONTENT ── */}
-        <main className="px-4 pt-2 pb-32 md:p-8 max-w-7xl mx-auto"
+        <main className="px-3 pt-2 pb-32 md:p-8 max-w-7xl mx-auto"
           style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
           <Outlet />
         </main>
