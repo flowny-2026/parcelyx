@@ -356,46 +356,47 @@ export default function Parcelas() {
   ]
 
   return (
-    <div className="space-y-5 pb-20 md:pb-0 animate-fade-in">
+    <div className="space-y-4 pb-24 animate-fade-in">
       <h1 className="text-xl font-bold text-white">Parcelas</h1>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-dark-700 rounded-xl p-2.5 border border-dark-500/50 text-center">
+          <p className="text-base font-bold text-amber-400">{parcelas.filter(p => p.status === 'pendente' || p.status === 'vence_hoje').length}</p>
+          <p className="text-[10px] text-gray-500">Pendentes</p>
+        </div>
+        <div className="bg-dark-700 rounded-xl p-2.5 border border-dark-500/50 text-center">
+          <p className="text-base font-bold text-red-400">{parcelas.filter(p => p.status === 'atrasado').length}</p>
+          <p className="text-[10px] text-gray-500">Atrasadas</p>
+        </div>
+        <div className="bg-dark-700 rounded-xl p-2.5 border border-dark-500/50 text-center">
+          <p className="text-base font-bold text-pix-400">{parcelas.filter(p => p.status === 'pago').length}</p>
+          <p className="text-[10px] text-gray-500">Pagas</p>
+        </div>
+      </div>
+
+      {/* Filters — scroll horizontal para não quebrar layout */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
         {filters.map(f => (
           <button key={f.key} onClick={() => { setFilter(f.key); setVisivel(15) }}
-            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+            style={{ minHeight: 'unset' }}
+            className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
               filter === f.key
                 ? 'bg-primary-600 text-white'
-                : 'bg-dark-700 text-gray-400 border border-dark-500 hover:border-primary-500/30'
+                : 'bg-dark-700 text-gray-400 border border-dark-500'
             }`}>
             {f.label}
           </button>
         ))}
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-2 md:gap-3">
-        <div className="bg-dark-700 rounded-xl p-2 md:p-3 border border-dark-500/50 text-center">
-          <p className="text-base md:text-lg font-bold text-amber-400">{parcelas.filter(p => p.status === 'pendente' || p.status === 'vence_hoje').length}</p>
-          <p className="text-[10px] md:text-xs text-gray-500">Pendentes</p>
-        </div>
-        <div className="bg-dark-700 rounded-xl p-2 md:p-3 border border-dark-500/50 text-center">
-          <p className="text-base md:text-lg font-bold text-red-400">{parcelas.filter(p => p.status === 'atrasado').length}</p>
-          <p className="text-[10px] md:text-xs text-gray-500">Atrasadas</p>
-        </div>
-        <div className="bg-dark-700 rounded-xl p-2 md:p-3 border border-dark-500/50 text-center">
-          <p className="text-base md:text-lg font-bold text-pix-400">{parcelas.filter(p => p.status === 'pago').length}</p>
-          <p className="text-[10px] md:text-xs text-gray-500">Pagas</p>
-        </div>
-      </div>
-
       {/* Parcelas list */}
       <div className="space-y-2">
         {filtered.slice(0, visivel).map(parcela => (
-          <div key={parcela.id} className="bg-dark-700 rounded-2xl p-3 md:p-4 border border-dark-500/50">
-            <div className="flex items-start gap-3">
+          <div key={parcela.id} className="bg-dark-700 rounded-2xl p-3 border border-dark-500/50">
+            <div className="flex items-start gap-2.5">
               {/* Ícone status */}
-              <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                 parcela.status === 'pago' ? 'bg-pix-500/10' :
                 parcela.status === 'atrasado' ? 'bg-red-500/10' : 'bg-amber-500/10'
               }`}>
@@ -404,38 +405,40 @@ export default function Parcelas() {
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-200 truncate">{parcela.clienteNome}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Parcela {parcela.numero}/{parcela.totalParcelas} • {new Date(parcela.vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                <div className="flex items-start justify-between gap-1">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-100 truncate leading-tight">{parcela.clienteNome}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {parcela.numero}/{parcela.totalParcelas} • {new Date(parcela.vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold text-white">{formatCurrency(calcularValorComMulta(parcela))}</p>
+                  <div className="text-right flex-shrink-0 ml-1">
+                    <p className="text-sm font-bold text-white leading-tight">{formatCurrency(calcularValorComMulta(parcela))}</p>
                     {parcela.status === 'atrasado' && multaDiaria > 0 && calcularValorComMulta(parcela) > parcela.valor && (
                       <p className="text-[9px] text-red-400 line-through">{formatCurrency(parcela.valor)}</p>
                     )}
                   </div>
                 </div>
 
-                {/* Status badge + ações */}
-                <div className="flex items-center justify-between mt-2">
-                  <span className={`inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border ${getStatusStyle(parcela.status)}`}>
+                {/* Status badge + botão pagar */}
+                <div className="flex items-center justify-between mt-2 gap-2">
+                  <span className={`inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border leading-none ${getStatusStyle(parcela.status)}`}
+                    style={{ minHeight: 'unset' }}>
                     {getStatusLabel(parcela.status)}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     {parcela.status !== 'pago' && (
                       <button onClick={() => setShowConfirm(parcela)}
-                        className="p-1.5 md:p-2 bg-pix-500/10 hover:bg-pix-500/20 rounded-lg transition-colors border border-pix-500/20"
-                        title="Marcar como pago">
-                        <Check className="w-4 h-4 text-pix-400" />
+                        style={{ minHeight: 'unset' }}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-pix-500 hover:bg-pix-600 rounded-lg transition-colors text-white text-xs font-semibold">
+                        <Check className="w-3.5 h-3.5" />
+                        Receber
                       </button>
                     )}
                     {parcela.status === 'pago' && (parcela.comprovanteUrl || parcela.comprovante_url) && (
                       <button onClick={() => setViewComprovante(parcela.comprovanteUrl || parcela.comprovante_url)}
-                        className="p-1.5 md:p-2 bg-primary-500/10 hover:bg-primary-500/20 rounded-lg transition-colors border border-primary-500/20"
-                        title="Ver comprovante">
+                        style={{ minHeight: 'unset' }}
+                        className="p-1.5 bg-primary-500/10 rounded-lg border border-primary-500/20">
                         <Image className="w-4 h-4 text-primary-400" />
                       </button>
                     )}
@@ -445,11 +448,18 @@ export default function Parcelas() {
             </div>
           </div>
         ))}
+
+        {filtered.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-sm">Nenhuma parcela encontrada</p>
+          </div>
+        )}
       </div>
 
       {filtered.length > visivel && (
         <button onClick={() => setVisivel(visivel + 15)}
-          className="w-full py-3 bg-dark-700 hover:bg-dark-600 text-gray-400 font-medium rounded-xl border border-dark-500/50 transition-all">
+          style={{ minHeight: 'unset' }}
+          className="w-full py-3 bg-dark-700 hover:bg-dark-600 text-gray-400 text-sm font-medium rounded-xl border border-dark-500/50 transition-all">
           Carregar mais ({filtered.length - visivel} restantes)
         </button>
       )}
@@ -472,121 +482,137 @@ export default function Parcelas() {
         </div>
       )}
 
-      {/* Modal confirmar pagamento */}
+      {/* Modal confirmar pagamento — sobe do rodapé no mobile */}
       {showConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4" onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}>
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center sm:justify-center"
+          onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}>
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative bg-dark-800 w-full max-w-sm rounded-2xl border border-dark-500/50 animate-fade-in p-5 max-h-[70vh] overflow-y-auto shadow-elevated" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Confirmar pagamento</h3>
-              <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}
-                className="p-1 rounded-lg hover:bg-dark-600 text-gray-400">
-                <X className="w-5 h-5" />
-              </button>
+          <div className="relative bg-dark-800 w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border-t border-dark-500/50 sm:border animate-slide-up overflow-y-auto shadow-2xl"
+            style={{ maxHeight: '90vh' }}
+            onClick={e => e.stopPropagation()}>
+
+            {/* Handle drag indicator */}
+            <div className="flex justify-center pt-3 pb-1 sm:hidden">
+              <div className="w-10 h-1 bg-dark-500 rounded-full" />
             </div>
 
-            <div className="bg-dark-700 rounded-xl p-4 border border-dark-500/50 mb-4">
-              <p className="text-sm text-gray-400">Cliente</p>
-              <p className="text-base font-semibold text-white">{showConfirm.clienteNome}</p>
-              <div className="flex justify-between mt-2">
-                <span className="text-sm text-gray-400">Parcela {showConfirm.numero}/{showConfirm.totalParcelas}</span>
-                <span className="text-sm font-bold text-pix-400">{formatCurrency(calcularValorComMulta(showConfirm))}</span>
+            <div className="px-5 pb-6 pt-2">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-white">Confirmar pagamento</h3>
+                <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}
+                  style={{ minHeight: 'unset' }}
+                  className="p-1.5 rounded-lg hover:bg-dark-600 text-gray-400">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              {calcularValorComMulta(showConfirm) > showConfirm.valor && (
-                <div className="flex justify-between mt-1 text-xs">
-                  <span className="text-gray-500">Valor original {formatCurrency(showConfirm.valor)} + multa por atraso</span>
-                  <span className="text-red-400">+{formatCurrency(calcularValorComMulta(showConfirm) - showConfirm.valor)}</span>
+
+              {/* Info parcela */}
+              <div className="bg-dark-700 rounded-xl p-3.5 border border-dark-500/50 mb-4">
+                <p className="text-xs text-gray-400 mb-0.5">Cliente</p>
+                <p className="text-sm font-bold text-white">{showConfirm.clienteNome}</p>
+                <div className="flex justify-between mt-2">
+                  <span className="text-xs text-gray-400">Parcela {showConfirm.numero}/{showConfirm.totalParcelas}</span>
+                  <span className="text-sm font-bold text-pix-400">{formatCurrency(calcularValorComMulta(showConfirm))}</span>
                 </div>
-              )}
-            </div>
-
-            {/* Tipo de pagamento */}
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-300 mb-2">Tipo de pagamento</p>
-              <div className="flex gap-2">
-                <button onClick={() => { setTipoPagamento('total'); setValorParcial('') }}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${tipoPagamento === 'total' ? 'bg-pix-500 text-white' : 'bg-dark-600 text-gray-400 border border-dark-500'}`}>
-                  Total
-                </button>
-                <button onClick={() => {
-                  setTipoPagamento('parcial')
-                  // Preenche automaticamente com a data de hoje
-                  if (!proximoVencimento) {
-                    setProximoVencimento(new Date().toISOString().split('T')[0])
-                  }
-                }}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${tipoPagamento === 'parcial' ? 'bg-primary-600 text-white' : 'bg-dark-600 text-gray-400 border border-dark-500'}`}>
-                  Parcial
-                </button>
-              </div>
-              {tipoPagamento === 'parcial' && (
-                <div className="mt-3 space-y-3">
-                  <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Valor pago pelo cliente</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400 text-sm">R$</span>
-                      <input type="number" step="0.01" value={valorParcial}
-                        onChange={e => setValorParcial(e.target.value)}
-                        placeholder={calcularValorComMulta(showConfirm).toFixed(2)}
-                        className="flex-1 px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500 text-sm" />
-                    </div>
+                {calcularValorComMulta(showConfirm) > showConfirm.valor && (
+                  <div className="flex justify-between mt-1">
+                    <span className="text-[11px] text-gray-500">Original: {formatCurrency(showConfirm.valor)} + multa</span>
+                    <span className="text-[11px] text-red-400">+{formatCurrency(calcularValorComMulta(showConfirm) - showConfirm.valor)}</span>
                   </div>
-                  {valorParcial && parseFloat(valorParcial) < calcularValorComMulta(showConfirm) && (
-                    <>
-                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                        <p className="text-xs text-amber-400">
-                          Restante: {formatCurrency(calcularValorComMulta(showConfirm) - parseFloat(valorParcial))} — será somado com juros e redistribuído nas parcelas pendentes do contrato.
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500 mb-1 block">Próximo vencimento (opcional — usado se não houver parcelas pendentes)</label>
-                        <input type="date" value={proximoVencimento}
-                          onChange={e => setProximoVencimento(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500 text-sm" />
-                      </div>
-                    </>
-                  )}
-                  {valorParcial && parseFloat(valorParcial) > calcularValorComMulta(showConfirm) && (
-                    <p className="text-xs text-pix-400">
-                      Excedente de {formatCurrency(parseFloat(valorParcial) - calcularValorComMulta(showConfirm))} será abatido nas próximas parcelas.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            {/* Upload comprovante */}
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-300 mb-2">Comprovante (opcional)</p>
-              {previewUrl ? (
-                <div className="relative">
-                  <img src={previewUrl} alt="Comprovante" className="w-full h-36 object-cover rounded-xl border border-dark-500/50" />
-                  <button onClick={() => { setComprovante(null); setPreviewUrl(null) }}
-                    className="absolute top-2 right-2 p-1.5 bg-dark-800/90 rounded-full text-gray-400 hover:text-white">
-                    <X className="w-4 h-4" />
+              {/* Tipo de pagamento */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gray-400 mb-2">Tipo de pagamento</p>
+                <div className="flex gap-2">
+                  <button onClick={() => { setTipoPagamento('total'); setValorParcial('') }}
+                    style={{ minHeight: 'unset' }}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tipoPagamento === 'total' ? 'bg-pix-500 text-white' : 'bg-dark-600 text-gray-400 border border-dark-500'}`}>
+                    Total
+                  </button>
+                  <button onClick={() => { setTipoPagamento('parcial'); if (!proximoVencimento) setProximoVencimento(new Date().toISOString().split('T')[0]) }}
+                    style={{ minHeight: 'unset' }}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tipoPagamento === 'parcial' ? 'bg-primary-600 text-white' : 'bg-dark-600 text-gray-400 border border-dark-500'}`}>
+                    Parcial
                   </button>
                 </div>
-              ) : (
-                <button onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-6 border-2 border-dashed border-dark-500 rounded-xl flex flex-col items-center gap-2 hover:border-pix-500/50 transition-colors active:bg-dark-700">
-                  <Image className="w-7 h-7 text-gray-500" />
-                  <span className="text-sm text-gray-500">Anexar comprovante</span>
-                </button>
-              )}
-              <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileChange} />
-            </div>
 
-            {/* Botões */}
-            <div className="flex gap-3">
-              <button onClick={handleConfirmarPagamento} disabled={uploading}
-                className="flex-1 py-3.5 bg-pix-500 hover:bg-pix-600 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all">
-                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                {uploading ? 'Salvando...' : 'Confirmar'}
-              </button>
-              <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}
-                className="px-5 py-3.5 border border-dark-500 text-gray-400 rounded-xl hover:bg-dark-700">
-                Cancelar
-              </button>
+                {tipoPagamento === 'parcial' && (
+                  <div className="mt-3 space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Valor pago</label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400 text-sm flex-shrink-0">R$</span>
+                        <input type="number" step="0.01" value={valorParcial}
+                          onChange={e => setValorParcial(e.target.value)}
+                          placeholder={calcularValorComMulta(showConfirm).toFixed(2)}
+                          style={{ minHeight: 'unset', fontSize: '14px' }}
+                          className="flex-1 px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500" />
+                      </div>
+                    </div>
+                    {valorParcial && parseFloat(valorParcial) < calcularValorComMulta(showConfirm) && (
+                      <>
+                        <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                          <p className="text-xs text-amber-400">
+                            Restante: {formatCurrency(calcularValorComMulta(showConfirm) - parseFloat(valorParcial))} + juros redistribuído nas próximas parcelas.
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Próximo vencimento</label>
+                          <input type="date" value={proximoVencimento}
+                            onChange={e => setProximoVencimento(e.target.value)}
+                            style={{ minHeight: 'unset', fontSize: '14px' }}
+                            className="w-full px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white outline-none focus:border-primary-500" />
+                        </div>
+                      </>
+                    )}
+                    {valorParcial && parseFloat(valorParcial) > calcularValorComMulta(showConfirm) && (
+                      <p className="text-xs text-pix-400">
+                        Excedente de {formatCurrency(parseFloat(valorParcial) - calcularValorComMulta(showConfirm))} abatido nas próximas parcelas.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Upload comprovante */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gray-400 mb-2">Comprovante (opcional)</p>
+                {previewUrl ? (
+                  <div className="relative">
+                    <img src={previewUrl} alt="Comprovante" className="w-full h-28 object-cover rounded-xl border border-dark-500/50" />
+                    <button onClick={() => { setComprovante(null); setPreviewUrl(null) }}
+                      style={{ minHeight: 'unset' }}
+                      className="absolute top-2 right-2 p-1 bg-dark-800/90 rounded-full text-gray-400">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => fileInputRef.current?.click()}
+                    style={{ minHeight: 'unset' }}
+                    className="w-full py-4 border-2 border-dashed border-dark-500 rounded-xl flex items-center justify-center gap-2 hover:border-pix-500/50 transition-colors">
+                    <Image className="w-5 h-5 text-gray-500" />
+                    <span className="text-sm text-gray-500">Anexar comprovante</span>
+                  </button>
+                )}
+                <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileChange} />
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-2">
+                <button onClick={handleConfirmarPagamento} disabled={uploading}
+                  style={{ minHeight: 'unset' }}
+                  className="flex-1 py-3.5 bg-pix-500 hover:bg-pix-600 disabled:opacity-60 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-sm">
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {uploading ? 'Salvando...' : 'Confirmar'}
+                </button>
+                <button onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}
+                  style={{ minHeight: 'unset' }}
+                  className="px-4 py-3.5 border border-dark-500 text-gray-400 rounded-xl hover:bg-dark-700 text-sm">
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         </div>

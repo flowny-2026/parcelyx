@@ -18,9 +18,16 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Melhora touch targets no mobile */
+/* Melhora touch targets no mobile — só elementos interativos principais */
 @media (max-width: 768px) {
-  button, a, input, textarea, select {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
     min-height: 44px;
   }
 }
