@@ -142,7 +142,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-900 flex">
+    <div className="min-h-screen bg-dark-900 flex" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
       {/* Input hidden para foto */}
       <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
 
@@ -230,7 +230,7 @@ export default function Layout() {
       )}
 
       {/* ── MAIN ── */}
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 md:ml-64" style={{ maxWidth: '100vw', overflowX: 'hidden', minWidth: 0 }}>
 
         {/* ── TOP BAR MOBILE ── */}
         <header className="md:hidden sticky top-0 z-30 bg-dark-900/95 backdrop-blur-md">
@@ -378,9 +378,9 @@ export default function Layout() {
         )}
 
         {/* ── PAGE CONTENT ── */}
-        <main className="px-0 md:px-8 pt-2 pb-32 max-w-7xl mx-auto"
-          style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
-          <div className="px-3 md:px-0">
+        <main className="px-0 md:px-8 pt-2 max-w-7xl mx-auto w-full"
+          style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))', overflowX: 'hidden' }}>
+          <div className="px-3 md:px-0 w-full" style={{ overflowX: 'hidden' }}>
             <Outlet />
           </div>
         </main>
