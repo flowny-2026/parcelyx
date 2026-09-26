@@ -16,9 +16,11 @@ export default function Dashboard() {
   const nomeExibido = userData?.nome || userData?.negocio || 'Usuário'
   const capitalInicial = userData?.capitalDisponivel || userData?.capital_disponivel || 0
 
-  const totalEmprestado = parcelamentos.reduce((sum, p) => sum + ((p.valorTotal || 0) - (p.entrada || 0)), 0)
+  const totalEmprestadoBruto = parcelamentos.reduce((sum, p) => sum + ((p.valorTotal || 0) - (p.entrada || 0)), 0)
   const totalRecebido = parcelas.filter(p => p.status === 'pago').reduce((sum, p) => sum + (p.valor || 0), 0)
-  const capitalDisponivel = capitalInicial - totalEmprestado + totalRecebido
+  // Quanto ainda está na rua = total emprestado menos o que já voltou via parcelas pagas
+  const totalEmprestado = Math.max(0, totalEmprestadoBruto - totalRecebido)
+  const capitalDisponivel = capitalInicial - totalEmprestadoBruto + totalRecebido
 
   const totalClientes = clientes?.length || 0
   const totalContratos = parcelamentos?.length || 0
