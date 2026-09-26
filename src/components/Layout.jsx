@@ -234,22 +234,24 @@ export default function Layout() {
 
         {/* ── TOP BAR MOBILE ── */}
         <header className="md:hidden sticky top-0 z-30 bg-dark-900/95 backdrop-blur-md">
-          <div className="flex items-center justify-between px-4 pt-3 pb-3">
+          <div className="flex items-center justify-between px-3 pt-3 pb-3">
             {/* Avatar com câmera */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 min-w-0">
               <Avatar size="md" showCamera />
-              <div>
-                <p className="text-xs text-gray-400 leading-none">Bem vindo,</p>
-                <p className="text-sm font-bold text-white leading-tight">{nomeExibido}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] text-gray-400 leading-none">Bem vindo,</p>
+                <p className="text-sm font-bold text-white leading-tight truncate max-w-[140px]">{nomeExibido}</p>
               </div>
             </div>
             {/* Ações */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <button onClick={() => { setShowSearch(!showSearch); setShowAlerts(false) }}
+                style={{ minHeight: 'unset' }}
                 className="p-2 rounded-xl hover:bg-dark-700 text-gray-400">
                 <Search className="w-5 h-5" />
               </button>
               <button onClick={() => { setShowAlerts(!showAlerts); setShowSearch(false) }}
+                style={{ minHeight: 'unset' }}
                 className="p-2 rounded-xl hover:bg-dark-700 text-gray-400 relative">
                 <Bell className="w-5 h-5" />
                 {totalAlertas > 0 && (
