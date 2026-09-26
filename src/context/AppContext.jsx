@@ -206,7 +206,11 @@ export function AppProvider({ children }) {
   async function marcarPago(parcelaId) {
     const { data, error } = await marcarParcelaPagaSupabase(parcelaId)
     if (!error && data) {
-      setParcelas(parcelas.map(p => p.id === parcelaId ? data : p))
+      // Atualiza localmente de imediato para resposta rápida na UI
+      setParcelas(prev => prev.map(p => p.id === parcelaId ? data : p))
+      // Recarrega todos os dados para garantir que capitalDisponível,
+      // totalRecebido e totalEmprestado reflitam o estado real do banco
+      await loadAllData()
       return { success: true, data }
     }
     return { success: false, error }

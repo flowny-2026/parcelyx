@@ -191,7 +191,7 @@ function adminNav(page, el) {
   if (page === 'dashboard') renderAdmDashboard();
   if (page === 'contas') renderContas();
   if (page === 'planos') renderPlanos();
-  if (page === 'financeiro') renderAdmFinanceiro();
+  if (page === 'financeiro') renderAdmFinanceiro(); // async, dispara sem await
   if (page === 'suporte') renderSuporte();
 }
 
@@ -586,7 +586,38 @@ function salvarPlano(i) {
 }
 
 // ── FINANCEIRO ────────────────────────────────────────
-function renderAdmFinanceiro() {
+async function carregarPagamentosReais() {
+  try {
+    if (typeof supabase === 'undefined') return;
+    const { data, error } = await supabase
+      .from('pagamentos')
+      .select('*')
+      .order('data_pagamento', { ascending: false });
+    if (error) { console.warn('⚠️ Erro ao carregar pagamentos:', error); return; }
+    if (data && data.length > 0) {
+      // Mescla com pagamentos locais (evita duplicatas por id)
+      const idsExistentes = new Set(pagamentos.map(p => p._id));
+      data.forEach(p => {
+        if (!idsExistentes.has(p.id)) {
+          pagamentos.push({
+            _id: p.id,
+            usuario: p.nome_cliente || 'Desconhecido',
+            plano: p.plano === 'completo' ? 'Mensal' : (p.plano || 'Mensal'),
+            valor: parseFloat(p.valor) || 0,
+            data: p.data_pagamento || p.created_at?.split('T')[0] || '—',
+            status: p.status === 'aprovado' ? 'Pago' : (p.status || 'Pago')
+          });
+          idsExistentes.add(p.id);
+        }
+      });
+    }
+  } catch(e) { console.error('Erro ao carregar pagamentos:', e); }
+}
+
+async function renderAdmFinanceiro() {
+  // Carrega pagamentos do Supabase antes de renderizar
+  await carregarPagamentosReais();
+
   const mrr = contas.filter(c=>c.status==='Ativo').reduce((s,c)=>{
     const p = planos.find(pl=>pl.nome===c.plano); return s+(p?.preco||0);
   },0);
@@ -609,15 +640,17 @@ function renderAdmFinanceiro() {
   }).join('');
 
   const statusBadge = { Pago:'badge-ativo', Atrasado:'badge-suspenso', Estornado:'badge-cancelado' };
-  document.getElementById('adm-pagamentos-tbody').innerHTML = pagamentos.map(p=>`
+  document.getElementById('adm-pagamentos-tbody').innerHTML = pagamentos.length
+    ? pagamentos.map(p=>`
     <tr>
       <td style="font-weight:600;font-size:13px">${p.usuario}</td>
-      <td><span class="badge badge-${p.plano.toLowerCase()}">${p.plano}</span></td>
+      <td><span class="badge badge-${(p.plano||'').toLowerCase()}">${p.plano}</span></td>
       <td style="font-weight:700;color:#059669">${fmt(p.valor)}</td>
       <td style="font-size:13px">${fmtDate(p.data)}</td>
       <td><span class="badge ${statusBadge[p.status]||''}">${p.status}</span></td>
     </tr>
-  `).join('');
+  `).join('')
+    : `<tr><td colspan="5" style="text-align:center;padding:24px;color:#737373">Nenhum pagamento registrado</td></tr>`;
 }
 
 // ── SUPORTE ───────────────────────────────────────────

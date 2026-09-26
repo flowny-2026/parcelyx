@@ -57,6 +57,61 @@ export default function Dashboard() {
       {/* Header */}
       <h1 className="text-xl font-bold text-white text-center md:text-left">Início</h1>
 
+      {/* Capital disponível — TOPO */}
+      <div className="bg-dark-700 rounded-2xl p-5 border border-primary-500/30">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary-500/10 rounded-xl flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-primary-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Capital disponível</p>
+              {!editandoCapital && (
+                <p className={`text-2xl font-bold ${capitalDisponivel >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurrency(capitalDisponivel)}</p>
+              )}
+            </div>
+          </div>
+          {!editandoCapital && (
+            <button onClick={() => { setEditandoCapital(true); setCapitalValue(capitalInicial.toString()) }}
+              className="p-2 rounded-lg bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20">
+              <Edit3 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {editandoCapital && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-500 mb-2">Capital total inicial</p>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 text-sm">R$</span>
+              <input type="number" step="0.01" value={capitalValue}
+                onChange={e => setCapitalValue(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white text-lg font-bold outline-none focus:border-primary-500"
+                placeholder="0,00" autoFocus />
+              <button onClick={salvarCapital}
+                className="p-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white">
+                <Check className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+        {!editandoCapital && (
+          <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-dark-500/30">
+            <div className="text-center">
+              <p className="text-xs text-gray-500">Inicial</p>
+              <p className="text-sm font-semibold text-gray-300">{formatCurrency(capitalInicial)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500">Emprestado</p>
+              <p className="text-sm font-semibold text-red-400">-{formatCurrency(totalEmprestado)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500">Recebido</p>
+              <p className="text-sm font-semibold text-pix-400">+{formatCurrency(totalRecebido)}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Alertas de vencimento de contratos */}
       {parcelasHoje.length > 0 && (
         <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
@@ -159,61 +214,6 @@ export default function Dashboard() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      </div>
-
-      {/* Capital disponível */}
-      <div className="bg-dark-700 rounded-2xl p-5 border border-primary-500/30">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-500/10 rounded-xl flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-primary-400" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">Capital disponível</p>
-              {!editandoCapital && (
-                <p className={`text-2xl font-bold ${capitalDisponivel >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurrency(capitalDisponivel)}</p>
-              )}
-            </div>
-          </div>
-          {!editandoCapital && (
-            <button onClick={() => { setEditandoCapital(true); setCapitalValue(capitalInicial.toString()) }}
-              className="p-2 rounded-lg bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20">
-              <Edit3 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-        {editandoCapital && (
-          <div className="mt-2">
-            <p className="text-xs text-gray-500 mb-2">Capital total inicial</p>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400 text-sm">R$</span>
-              <input type="number" step="0.01" value={capitalValue}
-                onChange={e => setCapitalValue(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg bg-dark-600 border border-dark-500 text-white text-lg font-bold outline-none focus:border-primary-500"
-                placeholder="0,00" autoFocus />
-              <button onClick={salvarCapital}
-                className="p-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white">
-                <Check className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        )}
-        {!editandoCapital && (
-          <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-dark-500/30">
-            <div className="text-center">
-              <p className="text-xs text-gray-500">Inicial</p>
-              <p className="text-sm font-semibold text-gray-300">{formatCurrency(capitalInicial)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-gray-500">Emprestado</p>
-              <p className="text-sm font-semibold text-red-400">-{formatCurrency(totalEmprestado)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-gray-500">Recebido</p>
-              <p className="text-sm font-semibold text-pix-400">+{formatCurrency(totalRecebido)}</p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Recebimentos recentes */}
