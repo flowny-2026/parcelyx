@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
 import { Check, Clock, AlertTriangle, Upload, X, Image, Loader2 } from 'lucide-react'
 import { supabase, updateParcelamento } from '../lib/supabase'
@@ -460,7 +461,7 @@ export default function Parcelas() {
       )}
 
       {/* Modal visualizar comprovante */}
-      {viewComprovante && (
+      {viewComprovante && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setViewComprovante(null)}>
           <div className="fixed inset-0 bg-black/80" />
           <div className="relative max-w-lg w-full animate-fade-in" onClick={e => e.stopPropagation()}>
@@ -474,11 +475,12 @@ export default function Parcelas() {
               Abrir em nova aba
             </a>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal confirmar pagamento — sobe do rodapé no mobile */}
-      {showConfirm && (
+      {showConfirm && createPortal(
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center sm:justify-center"
           onClick={() => { setShowConfirm(null); setComprovante(null); setPreviewUrl(null); setTipoPagamento('total'); setValorParcial('') }}>
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
@@ -610,7 +612,8 @@ export default function Parcelas() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
