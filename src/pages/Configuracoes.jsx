@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { Building, CreditCard, Bell, Download, Upload, Database } from 'lucide-react'
+import { Building, CreditCard, Bell, Download, Upload, Database, LogOut } from 'lucide-react'
 
 export default function Configuracoes() {
-  const { userData, updateUserData, clientes, parcelamentos, parcelas, addCliente, loadAllData } = useApp()
+  const { userData, updateUserData, clientes, parcelamentos, parcelas, addCliente, loadAllData, logout } = useApp()
   const fileInputRef = useRef(null)
   const [config, setConfig] = useState({
     nomeEmpresa: 'Meu Negócio',
@@ -319,6 +319,23 @@ export default function Configuracoes() {
         </button>
 
         {message && <p className="text-center text-sm text-gray-400 mt-3">{message}</p>}
+
+        {/* Logout */}
+        <div className="bg-dark-700 rounded-2xl p-5 border border-dark-500/50">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 bg-red-500/10 rounded-xl flex items-center justify-center">
+              <LogOut className="w-4 h-4 text-red-400" />
+            </div>
+            <h3 className="text-base font-semibold text-white">Conta</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">Sair da sua conta no Parcelyx.</p>
+          <button
+            onClick={() => { if (confirm('Deseja sair da sua conta?')) logout() }}
+            className="w-full py-3 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold rounded-xl transition-all border border-red-500/20 text-sm">
+            <LogOut className="w-4 h-4" />
+            Sair da conta
+          </button>
+        </div>
 
         <p className="text-center text-xs text-gray-600 pt-4">
           Parcelyx v2.0.0 • © 2026 Todos os direitos reservados
